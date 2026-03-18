@@ -335,19 +335,19 @@
       transition: width 0.1s linear;
     }
 
-    .progress-buffered { background: rgba(0,229,255,0.2); }
-    .progress-played   { background: #00e5ff; z-index: 1; }
+    .progress-buffered { background: rgba(0,176,204,0.2); }
+    .progress-played   { background: #00b0cc; z-index: 1; }
 
     .progress-thumb {
       position: absolute;
       left: 0%;
       width: 14px;
       height: 14px;
-      background: #00e5ff;
+      background: #00b0cc;
       border-radius: 50%;
       transform: translateX(-50%);
       z-index: 2;
-      box-shadow: 0 0 6px rgba(0,229,255,0.7);
+      box-shadow: 0 0 6px rgba(0,176,204,0.7);
       pointer-events: none;
       transition: transform var(--t-fast), width var(--t-fast), height var(--t-fast);
     }
@@ -377,17 +377,17 @@
       gap: 10px;
     }
 
-    .volume-row .ctrl-btn { color: #00e5ff; }
+    .volume-row .ctrl-btn { color: #00b0cc; }
 
     .volume-slider {
       width: 120px;
       flex: 0 0 auto;
       height: 5px;
-      accent-color: #00e5ff;
+      accent-color: #00b0cc;
       cursor: pointer;
       -webkit-appearance: none;
       appearance: none;
-      background: rgba(0,229,255,0.25);
+      background: rgba(0,176,204,0.25);
       border-radius: 99px;
     }
 
@@ -395,9 +395,9 @@
       -webkit-appearance: none;
       width: 21px;
       height: 21px;
-      background: #00e5ff;
+      background: #00b0cc;
       border-radius: 50%;
-      box-shadow: 0 0 8px rgba(0,229,255,0.7);
+      box-shadow: 0 0 8px rgba(0,176,204,0.7);
     }
 
     .volume-row .ctrl-btn--icon { width: 60px; height: 60px; }
@@ -463,11 +463,11 @@
 
     .ctrl-btn--icon    { width: 40px;  height: 40px; }
     .ctrl-btn--lg      { width: 52px;  height: 52px; }
-    .ctrl-btn--xl      { width: 68px;  height: 68px; background: rgba(0,229,255,0.15); }
-    .ctrl-btn--xl:hover{ background: rgba(0,229,255,0.25); }
+    .ctrl-btn--xl      { width: 68px;  height: 68px; background: rgba(0,176,204,0.15); }
+    .ctrl-btn--xl:hover{ background: rgba(0,176,204,0.25); }
 
     /* Center prev/play/next — cyan, 115% larger */
-    .controls-center .ctrl-btn { color: #00e5ff; }
+    .controls-center .ctrl-btn { color: #00b0cc; }
     .controls-center .ctrl-btn--lg     { width: 112px; height: 112px; }
     .controls-center .ctrl-btn--lg svg { width: 60px;  height: 60px; }
     .controls-center .ctrl-btn--xl     { width: 146px; height: 146px; }
@@ -2873,7 +2873,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v11';
+      const CACHE = 'vapp-v12';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
