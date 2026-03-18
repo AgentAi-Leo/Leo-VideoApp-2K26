@@ -1848,7 +1848,7 @@
     setPlaybackRate(rate) {
       if (this.type === 'native')  DOM.video.playbackRate = rate;
       else if (this.type === 'youtube') { if (this.yt) this.yt.setPlaybackRate(rate); }
-      // Vimeo playback rate not available via postMessage API — silently skip
+      else if (this.type === 'vimeo')   vmMsg('setPlaybackRate', rate);
     },
 
     get duration()    { return this.type === 'native' ? (DOM.video.duration || 0) : this._duration; },
@@ -1997,9 +1997,11 @@
       ['play', 'pause', 'finish', 'playProgress', 'bufferstart', 'bufferend', 'error'].forEach(name => {
         vmMsg('addEventListener', name);
       });
-      // Set volume and get duration
+      // Set volume, speed, and get duration
       const vol = parseFloat(DOM.volumeSlider.value) || 0.5;
       vmMsg('setVolume', vol);
+      const queue = buildQueue(); const item = queue[State.currentIndex];
+      if (item) vmMsg('setPlaybackRate', State.videoSpeeds[item.url] || 1);
       vmMsg('getDuration');
     } else if (evt === 'play') {
       onPlayerPlay();
@@ -2899,7 +2901,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v19';
+      const CACHE = 'vapp-v20';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
