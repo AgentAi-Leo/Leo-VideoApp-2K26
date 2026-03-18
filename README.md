@@ -4,8 +4,12 @@
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
-  - Audio Slider & Mute Adjustments
-
+  - Audio Slide&, Mute & Speed Controller Adjustments
+  - Added CLEAR ALL button 
+  - Added Loopable Keybinding to Playlist
+  - Added Toggle to LOOP PLAYLIST
+  - Move Menu to TOP od Screen
+  
 
 
 A production-ready, single-file mobile video player PWA. No build tools, no dependencies — open the HTML file in any browser and go.

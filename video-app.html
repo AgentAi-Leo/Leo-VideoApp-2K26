@@ -411,19 +411,39 @@
     }
 
     .speed-label {
-      font-size: 0.75rem;
+      font-size: 1.125rem;
       color: var(--text-2);
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
-    .speed-select {
+    .speed-scroll {
+      display: flex;
+      flex-direction: row;
+      overflow-x: auto;
+      gap: 6px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex: 1;
+    }
+    .speed-scroll::-webkit-scrollbar { display: none; }
+
+    .speed-btn {
+      flex-shrink: 0;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--r-sm);
-      padding: 3px 8px;
-      font-size: 0.8rem;
-      color: var(--text);
+      padding: 5px 12px;
+      font-size: 1.2rem;
+      color: var(--text-2);
       cursor: pointer;
+      white-space: nowrap;
+      transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+    }
+    .speed-btn--active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
     }
 
     /* ═══════════════════════════════════════════════════
@@ -475,28 +495,29 @@
     .empty-state a         { color: inherit; text-decoration: none; }
 
     /* ═══════════════════════════════════════════════════
-       BOTTOM TAB BAR
+       TOP TAB BAR
     ═══════════════════════════════════════════════════ */
     .tab-bar {
       position: relative;
       z-index: 50;
       display: flex;
       align-items: stretch;
-      height: calc(var(--tab-h) + var(--safe-bottom));
-      padding-bottom: var(--safe-bottom);
+      height: calc(var(--tab-h) + env(safe-area-inset-top, 0px));
+      padding-top: env(safe-area-inset-top, 0px);
       background: var(--glass-bg);
       backdrop-filter: blur(var(--glass-blur));
       -webkit-backdrop-filter: blur(var(--glass-blur));
-      border-top: 1px solid var(--glass-border);
+      border-bottom: 1px solid var(--glass-border);
       flex-shrink: 0;
       transition: opacity var(--t-med), transform var(--t-med);
+      order: -1;
     }
 
     /* Hidden on Home for immersive fullscreen — shows with controls */
     .tab-bar--hidden {
       opacity: 0;
       pointer-events: none;
-      transform: translateY(8px);
+      transform: translateY(-8px);
     }
 
     /* ── Preview button (Create tab) ── */
@@ -506,6 +527,24 @@
       box-shadow: 0 4px 16px rgba(34,197,94,0.35);
     }
     .btn--preview:hover  { box-shadow: 0 4px 22px rgba(34,197,94,0.55); }
+
+    .btn--loop {
+      background: var(--surface);
+      border: 1px solid rgba(0,229,255,0.4);
+      color: rgba(0,229,255,0.6);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      padding: 8px 18px;
+      transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast);
+    }
+    .btn--loop.loop-on {
+      background: rgba(0,229,255,0.15);
+      border-color: #00e5ff;
+      color: #00e5ff;
+      box-shadow: 0 0 10px rgba(0,229,255,0.3);
+    }
 
     .tab-btn {
       flex: 1;
@@ -526,13 +565,13 @@
     .tab-btn--active::before {
       content: '';
       position: absolute;
-      top: 0;
+      bottom: 0;
       left: 50%;
       transform: translateX(-50%);
       width: 32px;
       height: 2px;
       background: var(--accent-2);
-      border-radius: 0 0 99px 99px;
+      border-radius: 99px 99px 0 0;
       box-shadow: 0 0 8px var(--accent);
     }
 
@@ -1204,15 +1243,15 @@
 
             <!-- Playback speed selector -->
             <div class="speed-row">
-              <label class="speed-label" for="speed-select">Speed</label>
-              <select id="speed-select" class="speed-select" aria-label="Playback speed">
-                <option value="0.5">0.5×</option>
-                <option value="0.75">0.75×</option>
-                <option value="1" selected>1×</option>
-                <option value="1.25">1.25×</option>
-                <option value="1.5">1.5×</option>
-                <option value="2">2×</option>
-              </select>
+              <span class="speed-label">Speed</span>
+              <div id="speed-scroll" class="speed-scroll" role="group" aria-label="Playback speed">
+                <button class="speed-btn" data-rate="0.5">0.5×</button>
+                <button class="speed-btn" data-rate="0.75">0.75×</button>
+                <button class="speed-btn speed-btn--active" data-rate="1">1×</button>
+                <button class="speed-btn" data-rate="1.25">1.25×</button>
+                <button class="speed-btn" data-rate="1.5">1.5×</button>
+                <button class="speed-btn" data-rate="2">2×</button>
+              </div>
             </div>
 
           </div><!-- /controls-bottom -->
@@ -1247,13 +1286,22 @@
         <!-- ── Sub-panel: PLAYLIST ── -->
         <div id="create-sub-playlist" class="create-subpanel create-subpanel--active" style="max-width:640px;margin-left:auto;margin-right:auto">
 
-          <!-- PREVIEW -->
-          <div style="margin: 4.5em 16px 1em; display:flex; justify-content:center">
+          <!-- PREVIEW + CLEAR ALL + LOOP -->
+          <div style="margin: 4.5em 16px 0.5em; display:flex; justify-content:center; gap:12px; flex-wrap:wrap">
             <button id="btn-preview" class="btn btn--preview">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M8 5v14l11-7z"/>
               </svg>
               PREVIEW
+            </button>
+            <button id="btn-clear-all" class="btn btn--danger">CLEAR ALL</button>
+          </div>
+          <div style="margin: 0 16px 1em; display:flex; justify-content:center">
+            <button id="btn-loop-toggle" class="btn btn--loop" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:18px;height:18px">
+                <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+              </svg>
+              LOOP: OFF
             </button>
           </div>
 
@@ -1332,7 +1380,7 @@
             </div>
 
             <button id="btn-clear-playlist" class="btn btn--danger btn--sm" style="margin-top:1rem">
-              Clear All
+              Clear
             </button>
           </div>
 
@@ -1342,13 +1390,14 @@
         <!-- ── Sub-panel: ABOUT TEXT ── -->
         <div id="create-sub-about" class="create-subpanel" style="max-width:640px;margin-left:auto;margin-right:auto">
 
-          <div style="margin: 4.5em 16px 1em; display:flex; justify-content:center">
+          <div style="margin: 4.5em 16px 1em; display:flex; justify-content:center; gap:12px">
             <button id="btn-about-preview" class="btn btn--preview">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
               </svg>
               PREVIEW
             </button>
+            <button id="btn-clear-all-about" class="btn btn--danger">CLEAR ALL</button>
           </div>
 
           <div class="card" id="about-edit-card">
@@ -1473,6 +1522,7 @@
     introVideo:      null,        // { url, title } | null
     aboutText:       '',          // editable about/story text
     currentIndex:    -1,          // index into full queue (intro=0, then playlist)
+    loop:            false,       // loop playlist when it ends
     isPlaying:       false,
     controlsVisible: false,       // starts OFF per spec
     controlsTimer:   null,        // auto-hide timeout id
@@ -1488,19 +1538,22 @@
     KEY_PLAYLIST: 'vapp_playlist',
     KEY_INTRO:    'vapp_intro',
     KEY_ABOUT:    'vapp_about',
+    KEY_LOOP:     'vapp_loop',
 
     load() {
       try {
         State.playlist   = JSON.parse(localStorage.getItem(this.KEY_PLAYLIST) || '[]');
         State.introVideo = JSON.parse(localStorage.getItem(this.KEY_INTRO) || 'null');
         State.aboutText  = localStorage.getItem(this.KEY_ABOUT) || '';
-      } catch { State.playlist = []; State.introVideo = null; State.aboutText = ''; }
+        State.loop       = localStorage.getItem(this.KEY_LOOP) === 'true';
+      } catch { State.playlist = []; State.introVideo = null; State.aboutText = ''; State.loop = false; }
     },
 
     save() {
       localStorage.setItem(this.KEY_PLAYLIST, JSON.stringify(State.playlist));
       localStorage.setItem(this.KEY_INTRO,    JSON.stringify(State.introVideo));
       localStorage.setItem(this.KEY_ABOUT,    State.aboutText);
+      localStorage.setItem(this.KEY_LOOP,     State.loop);
     },
   };
 
@@ -1537,7 +1590,7 @@
     timeCurrent:      $('time-current'),
     timeDuration:     $('time-duration'),
     volumeSlider:     $('volume-slider'),
-    speedSelect:      $('speed-select'),
+    speedScroll:      $('speed-scroll'),
     toast:            $('toast'),
     // Tabs
     tabBtns:          document.querySelectorAll('.tab-btn'),
@@ -1815,6 +1868,18 @@
     State.isPlaying = true;
     updatePlayPauseIcon(true);
     DOM.bufferingOverlay.classList.remove('visible');
+    // Auto-unmute when playback confirmed — browser allows this once playing
+    if (AP.muted && !AP._mutedFlag) {
+      // native video muted by autoplay policy — unmute now
+      if (AP.type === 'native') DOM.video.muted = false;
+    }
+    if (AP.type === 'youtube' && AP.yt) {
+      AP.yt.unMute();
+      AP.yt.setVolume(parseFloat(DOM.volumeSlider.value) * 100);
+    }
+    if (AP.type === 'vimeo') {
+      vmMsg('setVolume', parseFloat(DOM.volumeSlider.value) || 0.5);
+    }
     // Re-arm auto-hide if controls currently visible
     if (State.controlsVisible) showControls();
     updateMediaSession();
@@ -1942,8 +2007,7 @@
       },
       events: {
         onReady(e) {
-          // Unmute and sync volume
-          e.target.unMute();
+          // Pre-set volume level (still muted — unmute happens in onPlayerPlay once playing)
           e.target.setVolume(parseFloat(DOM.volumeSlider.value) * 100);
           AP._duration = e.target.getDuration() || 0;
           DOM.timeDuration.textContent = formatTime(AP._duration);
@@ -2079,6 +2143,8 @@
     const next  = State.currentIndex + 1;
     if (next < queue.length) {
       loadVideo(next);
+    } else if (State.loop) {
+      loadVideo(0);
     } else {
       State.isPlaying = false;
       updatePlayPauseIcon(false);
@@ -2307,10 +2373,14 @@
     DOM.iconMute.style.display   = muted ? ''     : 'none';
   });
 
-  // Playback speed
-  DOM.speedSelect.addEventListener('change', e => {
+  // Playback speed — horizontal scroll buttons
+  DOM.speedScroll.addEventListener('click', e => {
+    const btn = e.target.closest('.speed-btn');
+    if (!btn) return;
     e.stopPropagation();
-    AP.setPlaybackRate(parseFloat(DOM.speedSelect.value));
+    DOM.speedScroll.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('speed-btn--active'));
+    btn.classList.add('speed-btn--active');
+    AP.setPlaybackRate(parseFloat(btn.dataset.rate));
     showControls();
   });
 
@@ -2631,6 +2701,39 @@
     switchTab('about');
   });
 
+  // CLEAR ALL — wipe playlist, intro, and about text
+  function clearAll() {
+    State.playlist    = [];
+    State.introVideo  = null;
+    State.currentIndex = -1;
+    State.aboutText   = '';
+    Storage.save();
+    $('about-text').value = '';
+    CRE.introUrl.value    = '';
+    CRE.introTitle.value  = '';
+    renderAboutDisplay();
+    renderPlaylist();
+    renderIntroPreview();
+    updateHomeEmptyState();
+    showToast('Everything cleared');
+  }
+  $('btn-clear-all').addEventListener('click', clearAll);
+  $('btn-clear-all-about').addEventListener('click', clearAll);
+
+  // LOOP toggle
+  const btnLoop = $('btn-loop-toggle');
+  function updateLoopBtn() {
+    btnLoop.classList.toggle('loop-on', State.loop);
+    btnLoop.setAttribute('aria-pressed', State.loop);
+    btnLoop.lastChild.textContent = State.loop ? 'LOOP: ON' : 'LOOP: OFF';
+  }
+  btnLoop.addEventListener('click', () => {
+    State.loop = !State.loop;
+    localStorage.setItem(Storage.KEY_LOOP, State.loop);
+    updateLoopBtn();
+  });
+  updateLoopBtn(); // reflect restored state
+
   /* ═══════════════════════════════════════════════════════
      ABOUT TAB — save / clear
   ═══════════════════════════════════════════════════════ */
@@ -2825,7 +2928,7 @@
         break;
       case 'ArrowRight':
         e.preventDefault();
-        playNext();
+        { const q = buildQueue(); const nx = State.currentIndex + 1; if (nx < q.length) loadVideo(nx); else if (q.length > 0) loadVideo(0); }
         break;
       case 'ArrowLeft':
         e.preventDefault();
