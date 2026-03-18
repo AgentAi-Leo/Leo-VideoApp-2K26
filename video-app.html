@@ -248,6 +248,17 @@
 
     .title-overlay.visible { opacity: 1; }
 
+    #title-overlay-text   { display: block; font-size: 27px; font-weight: 700; white-space: pre-line; }
+    #title-overlay-creator {
+      display: block;
+      text-align: left;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      margin-top: 4px;
+    }
+    #title-overlay-creator:empty { display: none; }
+
     /* ═══════════════════════════════════════════════════
        CONTROLS OVERLAY
        z-index 5 — above tap-target (4) so it
@@ -283,15 +294,27 @@
       gap: 8px;
     }
 
+    .controls-title-group {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+    }
     .controls-title {
-      font-size: 0.9rem;
+      font-size: 27px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.01em;
+      white-space: pre-line;
+    }
+    .controls-creator {
+      font-size: 1rem;
       font-weight: 600;
       color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      flex: 1;
+      letter-spacing: 0.01em;
+      margin-top: 4px;
     }
+    .controls-creator:empty { display: none; }
 
     /* — CENTER BUTTONS — */
     .controls-center {
@@ -1204,6 +1227,7 @@
         <!-- Title overlay — fades out after 5s -->
         <div id="title-overlay" class="title-overlay" aria-live="polite">
           <span id="title-overlay-text"></span>
+          <span id="title-overlay-creator"></span>
         </div>
 
         <!-- Tap target: captures taps when controls are hidden -->
@@ -1212,9 +1236,12 @@
         <!-- Controls overlay — toggles on tap/click -->
         <div id="controls-overlay" class="controls-overlay" aria-label="Player controls">
 
-          <!-- Top bar: title + share -->
+          <!-- Top bar: title + creator + buttons -->
           <div class="controls-top">
-            <span id="controls-title" class="controls-title"></span>
+            <div class="controls-title-group">
+              <span id="controls-title" class="controls-title"></span>
+              <span id="controls-creator" class="controls-creator"></span>
+            </div>
             <button id="btn-fullscreen" class="ctrl-btn ctrl-btn--icon" aria-label="Toggle fullscreen" title="Fullscreen">
               <svg id="icon-fs-enter" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
@@ -1640,6 +1667,8 @@
     bufferingOverlay: $('buffering-overlay'),
     titleOverlay:     $('title-overlay'),
     titleText:        $('title-overlay-text'),
+    titleCreator:     $('title-overlay-creator'),
+    controlsCreator:  $('controls-creator'),
     controlsOverlay:  $('controls-overlay'),
     controlsTitle:    $('controls-title'),
     emptyState:       $('empty-state'),
@@ -1756,7 +1785,7 @@
      OEMBED TITLE FETCHER
      Uses YouTube / Vimeo oEmbed (no API key required).
   ═══════════════════════════════════════════════════════ */
-  async function fetchVideoTitle(url) {
+  async function fetchOembed(url) {
     const info = detectVideoInfo(url.trim());
     if (info.type === 'native') return null;
     try {
@@ -1765,9 +1794,31 @@
         : `https://vimeo.com/api/oembed.json?url=https://vimeo.com/${info.id}`;
       const res = await fetch(oembedUrl);
       if (!res.ok) return null;
-      const data = await res.json();
-      return data.title || null;
+      return await res.json();
     } catch { return null; }
+  }
+
+  async function fetchVideoTitle(url) {
+    const data = await fetchOembed(url);
+    return data?.title || null;
+  }
+
+  async function fetchVideoCreator(url) {
+    const info = detectVideoInfo(url.trim());
+    if (info.type === 'native') return null;
+    try {
+      if (info.type === 'vimeo') {
+        const res = await fetch(`https://vimeo.com/api/v2/video/${info.id}.json`);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data[0]?.user_name || null;
+      }
+      if (info.type === 'youtube') {
+        const data = await fetchOembed(url);
+        return data?.author_name || null;
+      }
+    } catch { return null; }
+    return null;
   }
 
   async function autoFillTitle(urlInput, titleInput) {
@@ -2174,14 +2225,24 @@
 
     // Update title overlays
     const title = item.title || item.url;
-    DOM.titleText.textContent     = title;
-    DOM.controlsTitle.textContent = title;
-    // YouTube shows its own native title overlay — always hide ours for YouTube
-    if (detectVideoInfo(item.url).type === 'youtube') {
-      clearTimeout(titleTimer);
-      DOM.titleOverlay.classList.remove('visible');
-    } else {
-      showTitleOverlay();
+    const breakIdx = title.length > 60 ? title.lastIndexOf(' ', 60) : -1;
+    const displayTitle = breakIdx > 0 ? title.slice(0, breakIdx) + '\n' + title.slice(breakIdx + 1) : title;
+    DOM.titleText.textContent       = displayTitle;
+    DOM.controlsTitle.textContent   = displayTitle;
+    DOM.titleCreator.textContent    = item.creator || '';
+    DOM.controlsCreator.textContent = item.creator || '';
+    showTitleOverlay(true); // force-show even if controls visible
+    // Fetch creator if not yet cached, then update display if still current item
+    if (!item.creator) {
+      fetchVideoCreator(item.url).then(c => {
+        if (!c) return;
+        item.creator = c;
+        Storage.save();
+        if (queue[State.currentIndex] === item) {
+          DOM.titleCreator.textContent    = c;
+          DOM.controlsCreator.textContent = c;
+        }
+      });
     }
 
     // Reset progress
@@ -2327,8 +2388,8 @@
      TITLE OVERLAY
   ═══════════════════════════════════════════════════════ */
   let titleTimer = null;
-  function showTitleOverlay() {
-    if (State.controlsVisible) return; // controls bar already shows the title
+  function showTitleOverlay(force = false) {
+    if (!force && State.controlsVisible) return;
     DOM.titleOverlay.classList.add('visible');
     clearTimeout(titleTimer);
     titleTimer = setTimeout(() => DOM.titleOverlay.classList.remove('visible'), 5000);
@@ -2679,9 +2740,12 @@
     url = url.trim();
     if (!url)             { showToast('Enter a video URL'); return false; }
     if (!isValidUrl(url)) { showToast('Invalid URL — check and retry'); return false; }
-    State.playlist.push({ url, title: title.trim() });
+    const item = { url, title: title.trim(), creator: '' };
+    State.playlist.push(item);
     Storage.save(); renderPlaylist(); updateHomeEmptyState();
     showToast('✓ Added to playlist');
+    // Fetch creator in background and persist
+    fetchVideoCreator(url).then(c => { if (c) { item.creator = c; Storage.save(); } });
     return true;
   }
 
@@ -2696,9 +2760,11 @@
     url = url.trim();
     if (!url)             { showToast('Enter a URL'); return; }
     if (!isValidUrl(url)) { showToast('Invalid URL'); return; }
-    State.introVideo = { url, title: title.trim() };
+    State.introVideo = { url, title: title.trim(), creator: '' };
     Storage.save(); renderIntroPreview(); updateHomeEmptyState();
     showToast('✓ Intro video set');
+    // Fetch creator in background and persist
+    fetchVideoCreator(url).then(c => { if (c) { State.introVideo.creator = c; Storage.save(); } });
   }
 
   function clearPlaylist() {
@@ -2992,7 +3058,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v41';
+      const CACHE = 'vapp-v52';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
