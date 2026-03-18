@@ -1,0 +1,2853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="VideoApp" />
+  <meta name="description" content="A production-ready mobile video player PWA" />
+
+  <!-- PWA Manifest (inline via JS — avoids separate file) -->
+  <link id="pwa-manifest" rel="manifest" href="#" />
+
+  <title>VideoApp</title>
+
+  <style>
+    /* ═══════════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════════ */
+    :root {
+      /* Colors */
+      --bg:          #0a0a0f;
+      --bg-2:        #111118;
+      --bg-3:        #1a1a26;
+      --surface:     rgba(255,255,255,0.06);
+      --surface-hi:  rgba(255,255,255,0.10);
+      --border:      rgba(255,255,255,0.10);
+      --accent:      #7c6af7;          /* purple glow */
+      --accent-2:    #a78bfa;
+      --text:        #f0f0f8;
+      --text-2:      #9999bb;
+      --text-3:      #555577;
+      --danger:      #ef4444;
+      --success:     #22c55e;
+
+      /* Glassmorphism */
+      --glass-bg:    rgba(15, 15, 25, 0.72);
+      --glass-blur:  16px;
+      --glass-border:rgba(255,255,255,0.08);
+
+      /* Spacing */
+      --tab-h:       60px;          /* bottom nav height */
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+      /* Radius */
+      --r-sm:  6px;
+      --r-md:  12px;
+      --r-lg:  20px;
+      --r-xl:  28px;
+
+      /* Transitions */
+      --t-fast:  120ms ease;
+      --t-med:   240ms ease;
+      --t-slow:  400ms ease;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       RESET
+    ═══════════════════════════════════════════════════ */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;             /* prevent bounce scroll on iOS */
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, select, input {
+      font: inherit;
+      color: inherit;
+      background: none;
+      border: none;
+      outline: none;
+      cursor: pointer;
+    }
+
+    ul { list-style: none; }
+    a  { color: var(--accent-2); }
+
+    /* Custom scrollbar (webkit) */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+    /* ═══════════════════════════════════════════════════
+       APP SHELL
+    ═══════════════════════════════════════════════════ */
+    #app {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       TAB PANELS
+    ═══════════════════════════════════════════════════ */
+    #tab-panels {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+      transition: opacity var(--t-med), transform var(--t-med);
+      /* push content above tab bar */
+      padding-bottom: calc(var(--tab-h) + var(--safe-bottom));
+    }
+
+    .panel--active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+
+    /* HOME panel — no padding, video is fullscreen */
+    #panel-home {
+      padding-bottom: 0;
+      background: #000;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       VIDEO ELEMENT
+    ═══════════════════════════════════════════════════ */
+    #video-player {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+      display: block;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       YOUTUBE / VIMEO IFRAME CONTAINERS
+    ═══════════════════════════════════════════════════ */
+    #yt-player,
+    #vm-player {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: none;   /* shown by JS when active */
+    }
+
+    /* iframes created by YouTube API */
+    #yt-player iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* Vimeo uses a pre-existing <iframe> element directly */
+    #vm-player {
+      border: none;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       PLAYER TAP TARGET
+       Captures taps when controls are hidden.
+       z-index 4 — sits above players/overlays,
+       below controls-overlay (z-index 5).
+    ═══════════════════════════════════════════════════ */
+    #player-tap-target {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      cursor: pointer;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       BUFFERING OVERLAY
+    ═══════════════════════════════════════════════════ */
+    .buffering-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 2;
+      transition: opacity var(--t-med);
+    }
+
+    .buffering-overlay.visible { opacity: 1; }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 3px solid rgba(255,255,255,0.15);
+      border-top-color: var(--accent-2);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ═══════════════════════════════════════════════════
+       TITLE OVERLAY
+    ═══════════════════════════════════════════════════ */
+    .title-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 48px 20px 24px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, transparent 100%);
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.01em;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 3;
+      transition: opacity var(--t-slow);
+    }
+
+    .title-overlay.visible { opacity: 1; }
+
+    /* ═══════════════════════════════════════════════════
+       CONTROLS OVERLAY
+       z-index 5 — above tap-target (4) so it
+       captures events when visible.
+    ═══════════════════════════════════════════════════ */
+    .controls-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 5;
+      transition: opacity var(--t-med);
+      /* dark gradient frame */
+      background:
+        linear-gradient(to bottom,  rgba(0,0,0,0.6) 0%, transparent 22%),
+        linear-gradient(to top,     rgba(0,0,0,0.8) 0%, transparent 40%);
+    }
+
+    .controls-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* — TOP BAR — */
+    .controls-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: max(env(safe-area-inset-top, 12px), 12px) 16px 8px;
+      gap: 8px;
+    }
+
+    .controls-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
+
+    /* — CENTER BUTTONS — */
+    .controls-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+    }
+
+    /* — BOTTOM BAR — */
+    .controls-bottom {
+      padding: 8px 16px max(calc(var(--tab-h) + var(--safe-bottom) + 8px), 72px);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* ── Progress bar ── */
+    .progress-container {
+      position: relative;
+      height: 20px;          /* tall touch target */
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      touch-action: none;    /* custom pointer handling */
+    }
+
+    .progress-container::before {
+      /* track */
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 3px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 99px;
+    }
+
+    .progress-buffered,
+    .progress-played {
+      position: absolute;
+      left: 0;
+      height: 3px;
+      border-radius: 99px;
+      pointer-events: none;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .progress-buffered { background: rgba(255,255,255,0.3); }
+    .progress-played   { background: var(--accent-2); z-index: 1; }
+
+    .progress-thumb {
+      position: absolute;
+      left: 0%;
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      box-shadow: 0 0 6px rgba(124,106,247,0.7);
+      pointer-events: none;
+      transition: transform var(--t-fast), width var(--t-fast), height var(--t-fast);
+    }
+
+    .progress-container:active .progress-thumb {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* ── Time display ── */
+    .time-display {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      color: rgba(255,255,255,0.8);
+    }
+
+    .time-sep { opacity: 0.5; }
+
+    /* ── Volume row ── */
+    .volume-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .volume-slider {
+      width: 80px;
+      flex: 0 0 auto;
+      height: 3px;
+      accent-color: var(--accent-2);
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255,255,255,0.25);
+      border-radius: 99px;
+    }
+
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 4px rgba(124,106,247,0.5);
+    }
+
+    /* ── Speed row ── */
+    .speed-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .speed-label {
+      font-size: 0.75rem;
+      color: var(--text-2);
+      white-space: nowrap;
+    }
+
+    .speed-select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 3px 8px;
+      font-size: 0.8rem;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       CONTROL BUTTONS
+    ═══════════════════════════════════════════════════ */
+    .ctrl-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: #fff;
+      transition: transform var(--t-fast), background var(--t-fast);
+      flex-shrink: 0;
+    }
+
+    .ctrl-btn:active { transform: scale(0.88); }
+
+    .ctrl-btn--icon    { width: 40px;  height: 40px; }
+    .ctrl-btn--lg      { width: 52px;  height: 52px; }
+    .ctrl-btn--xl      { width: 68px;  height: 68px; background: rgba(255,255,255,0.12); }
+    .ctrl-btn--xl:hover{ background: rgba(255,255,255,0.20); }
+
+    .ctrl-btn svg      { width: 24px;  height: 24px; }
+    .ctrl-btn--lg svg  { width: 28px;  height: 28px; }
+    .ctrl-btn--xl svg  { width: 34px;  height: 34px; }
+    .ctrl-btn--sm svg  { width: 20px;  height: 20px; }
+
+    /* ═══════════════════════════════════════════════════
+       EMPTY STATE (HOME)
+    ═══════════════════════════════════════════════════ */
+    .empty-state {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-align: center;
+      padding: 32px;
+      z-index: 5;           /* above tap-target (z4) so links are clickable */
+      color: var(--text-2);
+    }
+
+    .empty-state svg       { width: 64px; height: 64px; opacity: 0.55; color: var(--accent-2); }
+    .empty-state p         { font-size: 1rem; color: var(--text); }
+    .empty-state .empty-hint { font-size: 0.85rem; color: var(--text-2); }
+    .empty-state strong    { color: var(--accent-2); }
+    .empty-state a         { color: inherit; text-decoration: none; }
+
+    /* ═══════════════════════════════════════════════════
+       BOTTOM TAB BAR
+    ═══════════════════════════════════════════════════ */
+    .tab-bar {
+      position: relative;
+      z-index: 50;
+      display: flex;
+      align-items: stretch;
+      height: calc(var(--tab-h) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border-top: 1px solid var(--glass-border);
+      flex-shrink: 0;
+      transition: opacity var(--t-med), transform var(--t-med);
+    }
+
+    /* Hidden on Home for immersive fullscreen — shows with controls */
+    .tab-bar--hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(8px);
+    }
+
+    /* ── Preview button (Create tab) ── */
+    .btn--preview {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(34,197,94,0.35);
+    }
+    .btn--preview:hover  { box-shadow: 0 4px 22px rgba(34,197,94,0.55); }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      color: var(--text-3);
+      transition: color var(--t-med);
+      padding: 6px 0 2px;
+      position: relative;
+    }
+
+    .tab-btn--active { color: var(--accent-2); }
+
+    /* active indicator pill */
+    .tab-btn--active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 32px;
+      height: 2px;
+      background: var(--accent-2);
+      border-radius: 0 0 99px 99px;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .tab-icon { width: 22px; height: 22px; }
+    .tab-label { font-size: 0.68rem; font-weight: 500; letter-spacing: 0.04em; }
+
+    /* ═══════════════════════════════════════════════════
+       CREATE TAB
+    ═══════════════════════════════════════════════════ */
+    #panel-create,
+    #panel-about {
+      background: var(--bg);
+    }
+
+    .create-header {
+      padding: max(env(safe-area-inset-top, 16px), 16px) 16px 0;
+    }
+
+    /* ── Create tab: 25% size increase + center justify ── */
+    #panel-create .create-header  { text-align: center; }
+    #panel-create .section-title  { font-size: 1.89rem; }
+    #panel-create .card           { margin: 15px 20px; padding: 22px; text-align: center; }
+    #panel-create .card-title     { font-size: 1.125rem; }
+    #panel-create .card-hint      { font-size: 0.975rem; }
+    #panel-create .input-group    { gap: 10px; }
+    #panel-create .text-input     { padding: 14px 17px; font-size: 1.125rem; text-align: left; }
+    #panel-create .btn            { padding: 14px 25px; font-size: 1.1rem; }
+    #panel-create .btn--sm        { padding: 9px 16px; font-size: 0.9rem; }
+    #panel-create .playlist-item  { padding: 14px 16px; font-size: 1rem; text-align: left; }
+
+    /* ── Create sub-tabs ── */
+    .create-subtabs {
+      display: flex;
+      gap: 8px;
+      margin: 8px auto 0;
+      width: fit-content;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 3px;
+    }
+
+    .create-subtab {
+      padding: 4px 13px;
+      border-radius: calc(var(--r-sm) - 1px);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-2);
+      transition: background var(--t-fast), color var(--t-fast);
+    }
+
+    .create-subtab--active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .create-subpanel { display: none; }
+    .create-subpanel--active { display: block; }
+
+    .section-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      padding: 16px 0 8px;
+    }
+
+    /* ── Card ── */
+    .card {
+      margin: 12px 16px;
+      padding: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    .card-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .card-hint {
+      font-size: 0.78rem;
+      color: var(--text-3);
+      margin-bottom: 12px;
+    }
+
+    /* ── Input group ── */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      color: var(--text);
+      font-size: 0.9rem;
+      transition: border-color var(--t-fast), box-shadow var(--t-fast);
+    }
+
+    .text-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(124,106,247,0.18);
+    }
+
+    .text-input::placeholder { color: var(--text-3); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 11px 20px;
+      border-radius: var(--r-md);
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: transform var(--t-fast), box-shadow var(--t-fast), opacity var(--t-fast);
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .btn:active { transform: scale(0.96); }
+
+    .btn--primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(124,106,247,0.35);
+    }
+    .btn--primary:hover { box-shadow: 0 4px 22px rgba(124,106,247,0.55); }
+
+    .btn--danger {
+      background: rgba(239,68,68,0.18);
+      color: var(--danger);
+      border: 1px solid rgba(239,68,68,0.25);
+    }
+
+    .btn--sm { padding: 7px 14px; font-size: 0.8rem; }
+
+    /* ── Intro preview ── */
+    .intro-preview {
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: var(--text-2);
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .intro-preview .intro-dot {
+      width: 8px; height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: 0 0 6px var(--success);
+    }
+
+    /* ── Playlist list ── */
+    .playlist-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .playlist-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      cursor: grab;
+      transition: background var(--t-fast), box-shadow var(--t-fast);
+      touch-action: none;
+    }
+
+    .playlist-item.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .playlist-item.drag-over {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(124,106,247,0.3);
+    }
+
+    .playlist-item__drag {
+      color: var(--text-3);
+      flex-shrink: 0;
+      cursor: grab;
+    }
+
+    .playlist-item__drag svg { width: 18px; height: 18px; }
+
+    .playlist-item__info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .playlist-item__title {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .playlist-item__url {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--text-3);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .playlist-item__remove {
+      color: var(--danger);
+      opacity: 0.6;
+      flex-shrink: 0;
+      transition: opacity var(--t-fast);
+    }
+
+    .playlist-item__remove:hover { opacity: 1; }
+    .playlist-item__remove svg   { width: 18px; height: 18px; }
+
+    .playlist-empty {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-3);
+      font-size: 0.85rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       ABOUT TAB
+    ═══════════════════════════════════════════════════ */
+    .about-content {
+      padding: max(env(safe-area-inset-top, 32px), 32px) 24px 32px;
+      text-align: center;
+    }
+
+    .about-content h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, var(--text), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .about-textarea {
+      width: 100%;
+      min-height: 180px;
+      resize: vertical;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      padding: 14px 16px;
+      color: var(--text);
+      font-size: 0.95rem;
+      line-height: 1.75;
+      text-align: left;
+      margin-bottom: 16px;
+      transition: border-color var(--t-fast);
+    }
+    .about-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .about-textarea::placeholder { color: var(--text-3); }
+
+    .about-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .about-display {
+      white-space: pre-wrap;
+      text-align: center;
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1.7;
+      min-height: 60px;
+    }
+
+    .about-display:empty::before {
+      content: 'Nothing here yet. Add your story in the Create tab.';
+      color: var(--text-3);
+      font-style: italic;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       TOAST NOTIFICATION
+    ═══════════════════════════════════════════════════ */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--tab-h) + var(--safe-bottom) + 16px);
+      left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--glass-blur));
+      -webkit-backdrop-filter: blur(var(--glass-blur));
+      border: 1px solid var(--glass-border);
+      border-radius: var(--r-xl);
+      padding: 10px 22px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 200;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      transition: opacity var(--t-med), transform var(--t-med);
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* ═══════════════════════════════════════════════════
+       GLOW ACCENT (decorative)
+    ═══════════════════════════════════════════════════ */
+    #panel-create::before,
+    #panel-about::before {
+      content: '';
+      position: fixed;
+      top: -120px;
+      right: -80px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(124,106,247,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #panel-create > *,
+    #panel-about > * { position: relative; z-index: 1; }
+
+    /* ═══════════════════════════════════════════════════
+       RESPONSIVE — larger screens
+    ═══════════════════════════════════════════════════ */
+    @media (min-width: 600px) {
+      .controls-bottom { padding-left: 24px; padding-right: 24px; }
+      .card { margin-left: auto; margin-right: auto; max-width: 560px; }
+      .create-header { max-width: 592px; margin: 0 auto; }
+    }
+
+    /* ═══════════════════════════════════════════════════
+       PLAYLIST ITEM ENTRANCE ANIMATION
+    ═══════════════════════════════════════════════════ */
+    @keyframes slideInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+
+    .playlist-item {
+      animation: slideInUp 200ms ease both;
+    }
+
+    /* Stagger each item */
+    .playlist-item:nth-child(1)  { animation-delay:  20ms; }
+    .playlist-item:nth-child(2)  { animation-delay:  50ms; }
+    .playlist-item:nth-child(3)  { animation-delay:  80ms; }
+    .playlist-item:nth-child(4)  { animation-delay: 110ms; }
+    .playlist-item:nth-child(5)  { animation-delay: 140ms; }
+    .playlist-item:nth-child(n+6){ animation-delay: 160ms; }
+
+    /* ═══════════════════════════════════════════════════
+       PWA INSTALL BANNER
+    ═══════════════════════════════════════════════════ */
+    .install-banner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 16px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg,
+        rgba(124,106,247,0.15) 0%,
+        rgba(167,139,250,0.08) 100%);
+      border: 1px solid rgba(124,106,247,0.3);
+      border-radius: var(--r-lg);
+      animation: slideInUp 300ms ease both;
+    }
+
+    .install-banner__text {
+      flex: 1;
+      font-size: 0.85rem;
+      color: var(--text-2);
+    }
+
+    .install-banner__text strong {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .install-banner__btn {
+      padding: 8px 16px;
+      background: var(--accent);
+      color: #fff;
+      border-radius: var(--r-md);
+      font-size: 0.82rem;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: transform var(--t-fast), box-shadow var(--t-fast);
+    }
+
+    .install-banner__btn:active { transform: scale(0.95); }
+
+    .install-banner__close {
+      color: var(--text-3);
+      padding: 4px;
+      flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       OFFLINE INDICATOR
+    ═══════════════════════════════════════════════════ */
+    .offline-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 300;
+      padding: 8px 16px;
+      padding-top: max(env(safe-area-inset-top, 8px), 8px);
+      background: rgba(239,68,68,0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-align: center;
+      letter-spacing: 0.02em;
+      transform: translateY(-110%);
+      transition: transform var(--t-med);
+    }
+
+    .offline-bar.visible { transform: translateY(0); }
+
+    /* ═══════════════════════════════════════════════════
+       VIDEO RIPPLE (double-tap seek feedback)
+    ═══════════════════════════════════════════════════ */
+    @keyframes rippleFade {
+      from { opacity: 0.5; transform: scale(0.8); }
+      to   { opacity: 0;   transform: scale(1.6); }
+    }
+
+    .seek-ripple {
+      position: absolute;
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      animation: rippleFade 500ms ease forwards;
+      z-index: 6;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       BUTTON RIPPLE (CSS only — :active pseudo)
+    ═══════════════════════════════════════════════════ */
+    .ctrl-btn--xl {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ctrl-btn--xl::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.25) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity var(--t-fast);
+    }
+
+    .ctrl-btn--xl:active::after { opacity: 1; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       APP SHELL — Root container
+  ═══════════════════════════════════════════ -->
+  <!-- Offline indicator (appears at top when offline) -->
+  <div id="offline-bar" class="offline-bar" role="alert" aria-live="assertive">
+    No internet connection
+  </div>
+
+  <div id="app">
+
+    <!-- ───────────────────────────────────────
+         TAB CONTENT PANELS
+    ─────────────────────────────────────────── -->
+    <main id="tab-panels">
+
+      <!-- ── PANEL 1: HOME (Video Player) ── -->
+      <section id="panel-home" class="panel panel--active" role="main" aria-label="Video Player">
+
+        <!-- Native video element (direct files: mp4, webm, etc.) -->
+        <video
+          id="video-player"
+          playsinline
+          preload="metadata"
+          aria-label="Video player"
+        ></video>
+
+        <!-- YouTube IFrame API renders here -->
+        <div id="yt-player" aria-hidden="true"></div>
+
+        <!-- Vimeo player (pre-existing iframe avoids SDK wrapper-div sizing issues) -->
+        <iframe
+          id="vm-player"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowfullscreen
+          aria-hidden="true"
+        ></iframe>
+
+        <!-- Buffering / loading spinner overlay -->
+        <div id="buffering-overlay" class="buffering-overlay" aria-hidden="true">
+          <div class="spinner" role="status" aria-label="Loading video"></div>
+        </div>
+
+        <!-- Title overlay — fades out after 5s -->
+        <div id="title-overlay" class="title-overlay" aria-live="polite">
+          <span id="title-overlay-text"></span>
+        </div>
+
+        <!-- Tap target: captures taps when controls are hidden -->
+        <div id="player-tap-target" aria-hidden="true"></div>
+
+        <!-- Controls overlay — toggles on tap/click -->
+        <div id="controls-overlay" class="controls-overlay" aria-label="Player controls">
+
+          <!-- Top bar: title + share -->
+          <div class="controls-top">
+            <span id="controls-title" class="controls-title"></span>
+            <button id="btn-share" class="ctrl-btn ctrl-btn--icon" aria-label="Share video" title="Share">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Center: Prev / Play-Pause / Next -->
+          <div class="controls-center">
+            <button id="btn-prev" class="ctrl-btn ctrl-btn--icon ctrl-btn--lg" aria-label="Previous video">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+              </svg>
+            </button>
+
+            <button id="btn-play-pause" class="ctrl-btn ctrl-btn--icon ctrl-btn--xl" aria-label="Play / Pause">
+              <!-- Play icon (default) -->
+              <svg id="icon-play" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              <!-- Pause icon (hidden by default) -->
+              <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="display:none">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+              </svg>
+            </button>
+
+            <button id="btn-next" class="ctrl-btn ctrl-btn--icon ctrl-btn--lg" aria-label="Next video">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M6 18l8.5-6L6 6v12zm2.5-6l5.5 4-5.5 4V6l5.5 4-5.5 4z"/>
+                <path d="M16 6h2v12h-2z"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Bottom bar: progress + time + volume + speed -->
+          <div class="controls-bottom">
+
+            <!-- Progress / seek bar -->
+            <div class="progress-container" id="progress-container" role="slider"
+                 aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <div class="progress-buffered" id="progress-buffered"></div>
+              <div class="progress-played" id="progress-played"></div>
+              <div class="progress-thumb" id="progress-thumb"></div>
+            </div>
+
+            <!-- Time display -->
+            <div class="time-display">
+              <span id="time-current">0:00</span>
+              <span class="time-sep">/</span>
+              <span id="time-duration">0:00</span>
+            </div>
+
+            <!-- Volume row -->
+            <div class="volume-row">
+              <button id="btn-mute" class="ctrl-btn ctrl-btn--icon ctrl-btn--sm" aria-label="Mute / Unmute">
+                <!-- Volume icon -->
+                <svg id="icon-volume" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+                </svg>
+                <!-- Mute icon (hidden) -->
+                <svg id="icon-mute" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="display:none">
+                  <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                </svg>
+              </button>
+
+              <input
+                id="volume-slider"
+                class="volume-slider"
+                type="range"
+                min="0" max="1" step="0.02"
+                value="0.5"
+                aria-label="Volume"
+              />
+            </div>
+
+            <!-- Playback speed selector -->
+            <div class="speed-row">
+              <label class="speed-label" for="speed-select">Speed</label>
+              <select id="speed-select" class="speed-select" aria-label="Playback speed">
+                <option value="0.5">0.5×</option>
+                <option value="0.75">0.75×</option>
+                <option value="1" selected>1×</option>
+                <option value="1.25">1.25×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2">2×</option>
+              </select>
+            </div>
+
+          </div><!-- /controls-bottom -->
+        </div><!-- /controls-overlay -->
+
+        <!-- Empty state — shown when no video loaded -->
+        <div id="empty-state" class="empty-state">
+          <svg id="empty-plus-icon" viewBox="0 0 24 24" fill="currentColor" aria-label="Go to Create" role="button" style="cursor:pointer">
+            <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+          </svg>
+          <p>No video loaded.</p>
+          <p class="empty-hint">Click <strong><a href="#" id="empty-create-link">Create</a></strong> to add videos to your playlist.</p>
+        </div>
+
+      </section>
+      <!-- /panel-home -->
+
+
+      <!-- ── PANEL 2: CREATE ── -->
+      <section id="panel-create" class="panel" role="main" aria-label="Create">
+
+        <div class="create-header" style="text-align:center">
+          <h2 class="section-title" style="font-size:1.89rem;text-align:center">Create</h2>
+        </div>
+
+        <!-- Sub-tab bar -->
+        <div class="create-subtabs" role="tablist" aria-label="Create sections">
+          <button class="create-subtab create-subtab--active" data-subtab="playlist" role="tab" aria-selected="true">Playlist</button>
+          <button class="create-subtab" data-subtab="about" role="tab" aria-selected="false">About Text</button>
+        </div>
+
+        <!-- ── Sub-panel: PLAYLIST ── -->
+        <div id="create-sub-playlist" class="create-subpanel create-subpanel--active" style="max-width:640px;margin-left:auto;margin-right:auto">
+
+          <!-- PREVIEW -->
+          <div style="margin: 12px 16px 0; display:flex; justify-content:center">
+            <button id="btn-preview" class="btn btn--preview">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              PREVIEW
+            </button>
+          </div>
+          <div style="height:7.5em"></div>
+
+          <!-- Intro Video setter -->
+          <div class="card" id="intro-card">
+            <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
+              <h3 class="card-title" style="padding:0;margin:0">Intro Video</h3>
+              <span style="font-size:0.975rem;color:rgba(255,255,255,0.65);white-space:nowrap">Paste URL then TAB to Autofill TITLE</span>
+            </div>
+            <p class="card-hint" style="margin-top:6px">Plays first, before your playlist. Supports YouTube, Vimeo, or direct video URLs.</p>
+
+            <div class="input-group">
+              <input
+                id="intro-url"
+                class="text-input"
+                type="url"
+                placeholder="YouTube, Vimeo, or direct video URL…"
+                inputmode="url"
+                autocomplete="off"
+              />
+              <input
+                id="intro-title"
+                class="text-input"
+                type="text"
+                placeholder="Title (optional)"
+                autocomplete="off"
+              />
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+              <button id="btn-set-intro" class="btn btn--primary">Set Intro</button>
+              <button id="btn-clear-intro" class="btn btn--danger btn--sm">Clear</button>
+            </div>
+
+            <!-- Intro preview row -->
+            <div id="intro-preview" class="intro-preview" aria-live="polite"></div>
+          </div>
+
+          <!-- Add Video to Playlist -->
+          <div class="card" id="add-video-card">
+            <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
+              <h3 class="card-title" style="padding:0;margin:0">Add Video</h3>
+              <span style="font-size:0.975rem;color:rgba(255,255,255,0.65);white-space:nowrap">Paste URL then TAB to Autofill TITLE</span>
+            </div>
+            <p class="card-hint" style="margin-bottom:12px;margin-top:6px">Supports YouTube, Vimeo, or direct .mp4/.webm URLs.</p>
+
+            <div class="input-group">
+              <input
+                id="add-url"
+                class="text-input"
+                type="url"
+                placeholder="YouTube, Vimeo, or direct video URL…"
+                inputmode="url"
+                autocomplete="off"
+              />
+              <input
+                id="add-title"
+                class="text-input"
+                type="text"
+                placeholder="Title (optional)"
+                autocomplete="off"
+              />
+            </div>
+            <button id="btn-add-video" class="btn btn--primary">Add to Playlist</button>
+          </div>
+
+          <!-- Playlist List -->
+          <div class="card" id="playlist-card">
+            <h3 class="card-title">Playlist <span id="playlist-count" class="badge">0</span></h3>
+
+            <ul id="playlist-list" class="playlist-list" aria-label="Playlist items" role="list">
+              <!-- Items injected by JS -->
+            </ul>
+
+            <div id="playlist-empty" class="playlist-empty" aria-live="polite">
+              No videos yet. Add one above.
+            </div>
+
+            <button id="btn-clear-playlist" class="btn btn--danger btn--sm" style="margin-top:1rem">
+              Clear All
+            </button>
+          </div>
+
+        </div>
+        <!-- /create-sub-playlist -->
+
+        <!-- ── Sub-panel: ABOUT TEXT ── -->
+        <div id="create-sub-about" class="create-subpanel" style="max-width:640px;margin-left:auto;margin-right:auto">
+
+          <div style="margin: 12px 16px 0; display:flex; justify-content:center">
+            <button id="btn-about-preview" class="btn btn--preview">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+              </svg>
+              PREVIEW
+            </button>
+          </div>
+
+          <div class="card" id="about-edit-card">
+            <h3 class="card-title">About Text</h3>
+            <p class="card-hint" style="margin-bottom:12px">Displayed on the About tab.</p>
+            <textarea
+              id="about-text"
+              class="about-textarea"
+              placeholder="Add your story here…"
+              rows="10"
+              spellcheck="true"
+            ></textarea>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+              <button id="btn-about-save" class="btn btn--primary">Save</button>
+              <button id="btn-about-clear" class="btn btn--danger btn--sm">Clear</button>
+            </div>
+          </div>
+
+        </div>
+        <!-- /create-sub-about -->
+
+      </section>
+      <!-- /panel-create -->
+
+
+      <!-- ── PANEL 3: ABOUT ── -->
+      <section id="panel-about" class="panel" role="main" aria-label="About">
+
+        <!-- PWA install banner (shown by JS when installable) -->
+        <div id="install-banner" class="install-banner" style="display:none">
+          <div class="install-banner__text">
+            <strong>Install VideoApp</strong>
+            Add to your home screen for the full app experience.
+          </div>
+          <button id="btn-install" class="install-banner__btn">Install</button>
+          <button id="btn-install-dismiss" class="install-banner__close" aria-label="Dismiss">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="about-content">
+          <h1>ABOUT</h1>
+          <div id="about-display" class="about-display" aria-live="polite"></div>
+        </div>
+
+      </section>
+      <!-- /panel-about -->
+
+    </main>
+    <!-- /tab-panels -->
+
+
+    <!-- ───────────────────────────────────────
+         BOTTOM NAVIGATION BAR
+    ─────────────────────────────────────────── -->
+    <nav id="tab-bar" class="tab-bar tab-bar--hidden" role="navigation" aria-label="Main navigation">
+
+      <button
+        id="tab-home"
+        class="tab-btn tab-btn--active"
+        data-panel="home"
+        aria-label="Home"
+        aria-selected="true"
+        role="tab"
+      >
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+        </svg>
+        <span class="tab-label">Home</span>
+      </button>
+
+      <button
+        id="tab-create"
+        class="tab-btn"
+        data-panel="create"
+        aria-label="Create"
+        aria-selected="false"
+        role="tab"
+      >
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+        </svg>
+        <span class="tab-label">Create</span>
+      </button>
+
+      <button
+        id="tab-about"
+        class="tab-btn"
+        data-panel="about"
+        aria-label="About"
+        aria-selected="false"
+        role="tab"
+      >
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+        </svg>
+        <span class="tab-label">About</span>
+      </button>
+
+    </nav>
+    <!-- /tab-bar -->
+
+
+    <!-- ───────────────────────────────────────
+         GLOBAL TOAST NOTIFICATION
+    ─────────────────────────────────────────── -->
+    <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+  </div>
+  <!-- /app -->
+
+  <script>
+  'use strict';
+
+  /* ═══════════════════════════════════════════════════════
+     STATE — single source of truth
+  ═══════════════════════════════════════════════════════ */
+  const State = {
+    playlist:        [],          // [{ url, title }]
+    introVideo:      null,        // { url, title } | null
+    aboutText:       '',          // editable about/story text
+    currentIndex:    -1,          // index into full queue (intro=0, then playlist)
+    isPlaying:       false,
+    controlsVisible: false,       // starts OFF per spec
+    controlsTimer:   null,        // auto-hide timeout id
+    isSeeking:       false,
+    swipeStartX:     0,
+    swipeStartY:     0,
+  };
+
+  /* ═══════════════════════════════════════════════════════
+     STORAGE — localStorage wrapper
+  ═══════════════════════════════════════════════════════ */
+  const Storage = {
+    KEY_PLAYLIST: 'vapp_playlist',
+    KEY_INTRO:    'vapp_intro',
+    KEY_ABOUT:    'vapp_about',
+
+    load() {
+      try {
+        State.playlist   = JSON.parse(localStorage.getItem(this.KEY_PLAYLIST) || '[]');
+        State.introVideo = JSON.parse(localStorage.getItem(this.KEY_INTRO) || 'null');
+        State.aboutText  = localStorage.getItem(this.KEY_ABOUT) || '';
+      } catch { State.playlist = []; State.introVideo = null; State.aboutText = ''; }
+    },
+
+    save() {
+      localStorage.setItem(this.KEY_PLAYLIST, JSON.stringify(State.playlist));
+      localStorage.setItem(this.KEY_INTRO,    JSON.stringify(State.introVideo));
+      localStorage.setItem(this.KEY_ABOUT,    State.aboutText);
+    },
+  };
+
+  /* ═══════════════════════════════════════════════════════
+     DOM REFS — cached once
+  ═══════════════════════════════════════════════════════ */
+  const $ = id => document.getElementById(id);
+
+  const DOM = {
+    video:            $('video-player'),
+    ytPlayerDiv:      $('yt-player'),
+    vmPlayer:         $('vm-player'),
+    playerTapTarget:  $('player-tap-target'),
+    bufferingOverlay: $('buffering-overlay'),
+    titleOverlay:     $('title-overlay'),
+    titleText:        $('title-overlay-text'),
+    controlsOverlay:  $('controls-overlay'),
+    controlsTitle:    $('controls-title'),
+    emptyState:       $('empty-state'),
+    // Controls
+    btnPlayPause:     $('btn-play-pause'),
+    btnPrev:          $('btn-prev'),
+    btnNext:          $('btn-next'),
+    btnMute:          $('btn-mute'),
+    btnShare:         $('btn-share'),
+    iconPlay:         $('icon-play'),
+    iconPause:        $('icon-pause'),
+    iconVolume:       $('icon-volume'),
+    iconMute:         $('icon-mute'),
+    progressContainer:$('progress-container'),
+    progressBuffered: $('progress-buffered'),
+    progressPlayed:   $('progress-played'),
+    progressThumb:    $('progress-thumb'),
+    timeCurrent:      $('time-current'),
+    timeDuration:     $('time-duration'),
+    volumeSlider:     $('volume-slider'),
+    speedSelect:      $('speed-select'),
+    toast:            $('toast'),
+    // Tabs
+    tabBtns:          document.querySelectorAll('.tab-btn'),
+    panels:           document.querySelectorAll('.panel'),
+    tabBar:           $('tab-bar'),
+  };
+
+  /* ═══════════════════════════════════════════════════════
+     UTILS
+  ═══════════════════════════════════════════════════════ */
+  function formatTime(secs) {
+    if (!isFinite(secs) || secs < 0) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  let toastTimer = null;
+  function showToast(msg, duration = 2200) {
+    DOM.toast.textContent = msg;
+    DOM.toast.classList.add('visible');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => DOM.toast.classList.remove('visible'), duration);
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     TAB NAVIGATION
+  ═══════════════════════════════════════════════════════ */
+  function switchTab(panelName) {
+    DOM.tabBtns.forEach(btn => {
+      const active = btn.dataset.panel === panelName;
+      btn.classList.toggle('tab-btn--active', active);
+      btn.setAttribute('aria-selected', active);
+    });
+    DOM.panels.forEach(panel => {
+      panel.classList.toggle('panel--active', panel.id === `panel-${panelName}`);
+    });
+    // Tab bar: hidden on Home (immersive), always visible on Create/About
+    if (panelName === 'home') {
+      DOM.tabBar.classList.add('tab-bar--hidden');
+      hideControls();
+    } else {
+      DOM.tabBar.classList.remove('tab-bar--hidden');
+    }
+  }
+
+  DOM.tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.panel));
+  });
+
+  /* ── Create sub-tabs ── */
+  const createSubtabs = document.querySelectorAll('.create-subtab');
+  function switchCreateSubtab(name) {
+    createSubtabs.forEach(btn => {
+      const active = btn.dataset.subtab === name;
+      btn.classList.toggle('create-subtab--active', active);
+      btn.setAttribute('aria-selected', active);
+    });
+    $('create-sub-playlist').classList.toggle('create-subpanel--active', name === 'playlist');
+    $('create-sub-about').classList.toggle('create-subpanel--active', name === 'about');
+  }
+  createSubtabs.forEach(btn => {
+    btn.addEventListener('click', () => switchCreateSubtab(btn.dataset.subtab));
+  });
+
+  $('empty-create-link').addEventListener('click', e => {
+    e.preventDefault();
+    switchTab('create');
+  });
+
+  $('empty-plus-icon').addEventListener('click', () => switchTab('create'));
+
+  /* ═══════════════════════════════════════════════════════
+     VIDEO TYPE DETECTION
+     Supports: YouTube (watch/short/embed), Vimeo, native video files
+  ═══════════════════════════════════════════════════════ */
+  function detectVideoInfo(url) {
+    // YouTube: watch?v=, embed/, shorts/, live/, v/, youtu.be/
+    let m = url.match(
+      /(?:youtube\.com\/(?:watch\?(?:.*?&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([^&?/\s#]+)/
+    );
+    if (m) return { type: 'youtube', id: m[1] };
+
+    // Vimeo: vimeo.com/ID or player.vimeo.com/video/ID
+    m = url.match(/(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)(\d+)/);
+    if (m) return { type: 'vimeo', id: m[1] };
+
+    // Native video file / stream
+    return { type: 'native', url };
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     OEMBED TITLE FETCHER
+     Uses YouTube / Vimeo oEmbed (no API key required).
+  ═══════════════════════════════════════════════════════ */
+  async function fetchVideoTitle(url) {
+    const info = detectVideoInfo(url.trim());
+    if (info.type === 'native') return null;
+    try {
+      const oembedUrl = info.type === 'youtube'
+        ? `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${info.id}&format=json`
+        : `https://vimeo.com/api/oembed.json?url=https://vimeo.com/${info.id}`;
+      const res = await fetch(oembedUrl);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.title || null;
+    } catch { return null; }
+  }
+
+  async function autoFillTitle(urlInput, titleInput) {
+    const url = urlInput.value.trim();
+    if (!url || titleInput.value.trim()) return; // skip if no URL or title already set
+    const prev = titleInput.placeholder;
+    titleInput.placeholder = 'Fetching title…';
+    const title = await fetchVideoTitle(url);
+    titleInput.placeholder = prev;
+    if (title && !titleInput.value.trim()) titleInput.value = title;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     VIMEO POSTMESSAGE HELPER
+     No SDK — talk directly to the Vimeo embed via postMessage.
+  ═══════════════════════════════════════════════════════ */
+  function vmMsg(method, value) {
+    try {
+      const msg = { method };
+      if (value !== undefined) msg.value = value;
+      DOM.vmPlayer.contentWindow.postMessage(JSON.stringify(msg), 'https://player.vimeo.com');
+    } catch {}
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     ACTIVE PLAYER ABSTRACTION
+     Unified API for native video, YouTube, and Vimeo.
+  ═══════════════════════════════════════════════════════ */
+  const AP = {
+    type: null,    // 'native' | 'youtube' | 'vimeo'
+    yt:   null,    // YT.Player instance (YouTube only)
+
+    // Cached values for YouTube/Vimeo (sync reads)
+    _duration:    0,
+    _currentTime: 0,
+    _vmFromInit:  false,
+    _mutedFlag:   false,
+
+    destroy() {
+      stopProgressPolling();
+      if (this.yt) {
+        try { this.yt.destroy(); } catch {}
+        this.yt = null;
+      }
+      if (this.type === 'vimeo') {
+        window.removeEventListener('message', handleVimeoMessage);
+        try { DOM.vmPlayer.src = 'about:blank'; } catch {}
+      }
+      this.type = null;
+      this._duration = 0;
+      this._currentTime = 0;
+      this._mutedFlag = false;
+    },
+
+    play() {
+      if (this.type === 'native')  return DOM.video.play().catch(() => {});
+      if (this.type === 'youtube') { if (this.yt) this.yt.playVideo(); }
+      if (this.type === 'vimeo')   vmMsg('play');
+    },
+
+    pause() {
+      if (this.type === 'native')  return DOM.video.pause();
+      if (this.type === 'youtube') { if (this.yt) this.yt.pauseVideo(); }
+      if (this.type === 'vimeo')   vmMsg('pause');
+    },
+
+    seek(seconds) {
+      if (this.type === 'native')  DOM.video.currentTime = seconds;
+      else if (this.type === 'youtube') { if (this.yt) this.yt.seekTo(seconds, true); }
+      else if (this.type === 'vimeo')   { vmMsg('seekTo', seconds); this._currentTime = seconds; }
+    },
+
+    setVolume(v) {  // v: 0–1
+      if (v > 0) this._mutedFlag = false;
+      if (this.type === 'native')  DOM.video.volume = v;
+      else if (this.type === 'youtube') { if (this.yt) { this.yt.setVolume(v * 100); if (v > 0) this.yt.unMute(); } }
+      else if (this.type === 'vimeo')   vmMsg('setVolume', v);
+    },
+
+    mute() {
+      this._mutedFlag = true;
+      if (this.type === 'native')  DOM.video.muted = true;
+      else if (this.type === 'youtube') { if (this.yt) this.yt.mute(); }
+      else if (this.type === 'vimeo')   vmMsg('setVolume', 0);
+    },
+
+    unmute() {
+      this._mutedFlag = false;
+      const vol = parseFloat(DOM.volumeSlider.value) || 0.5;
+      if (this.type === 'native')  { DOM.video.muted = false; }
+      else if (this.type === 'youtube') { if (this.yt) { this.yt.unMute(); this.yt.setVolume(vol * 100); } }
+      else if (this.type === 'vimeo')   vmMsg('setVolume', vol);
+    },
+
+    setPlaybackRate(rate) {
+      if (this.type === 'native')  DOM.video.playbackRate = rate;
+      else if (this.type === 'youtube') { if (this.yt) this.yt.setPlaybackRate(rate); }
+      // Vimeo playback rate not available via postMessage API — silently skip
+    },
+
+    get duration()    { return this.type === 'native' ? (DOM.video.duration || 0) : this._duration; },
+    get currentTime() { return this.type === 'native' ? DOM.video.currentTime : this._currentTime; },
+    get paused()      { return this.type === 'native' ? DOM.video.paused : !State.isPlaying; },
+    get muted()       { return this.type === 'native' ? DOM.video.muted  : this._mutedFlag; },
+  };
+
+  /* ═══════════════════════════════════════════════════════
+     SHOW PLAYER TYPE
+     Hides/shows the correct player element.
+  ═══════════════════════════════════════════════════════ */
+  function showPlayerType(type) {
+    DOM.video.style.display       = type === 'native'  ? 'block' : 'none';
+    DOM.ytPlayerDiv.style.display = type === 'youtube' ? 'block' : 'none';
+    DOM.vmPlayer.style.display    = type === 'vimeo'   ? 'block' : 'none';
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     PROGRESS POLLING (YouTube only)
+     Native video uses timeupdate event.
+     Vimeo uses playProgress postMessage events.
+  ═══════════════════════════════════════════════════════ */
+  let progressPollTimer = null;
+
+  function startProgressPolling() {
+    stopProgressPolling();
+    progressPollTimer = setInterval(() => {
+      if (!State.isPlaying) return;
+
+      if (AP.type === 'youtube' && AP.yt) {
+        try {
+          AP._currentTime = AP.yt.getCurrentTime() || 0;
+          AP._duration    = AP.yt.getDuration()    || 0;
+          syncProgressBar(AP._currentTime, AP._duration, null);
+        } catch {}
+      }
+      // Vimeo progress comes via postMessage playProgress events — no polling needed
+    }, 250);
+  }
+
+  function stopProgressPolling() {
+    clearInterval(progressPollTimer);
+    progressPollTimer = null;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     PROGRESS BAR SYNC
+  ═══════════════════════════════════════════════════════ */
+  function syncProgressBar(current, duration, bufferedEnd) {
+    if (!duration || !isFinite(duration)) return;
+    const pct = (current / duration) * 100;
+    DOM.progressPlayed.style.width = pct + '%';
+    DOM.progressThumb.style.left   = pct + '%';
+    DOM.timeCurrent.textContent    = formatTime(current);
+    DOM.timeDuration.textContent   = formatTime(duration);
+
+    if (bufferedEnd != null) {
+      DOM.progressBuffered.style.width = ((bufferedEnd / duration) * 100) + '%';
+    }
+
+    DOM.progressContainer.setAttribute('aria-valuenow', Math.round(pct));
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     SHARED PLAYER EVENT HANDLERS
+     Called from native video events AND YouTube/Vimeo callbacks.
+  ═══════════════════════════════════════════════════════ */
+  function onPlayerPlay() {
+    State.isPlaying = true;
+    updatePlayPauseIcon(true);
+    DOM.bufferingOverlay.classList.remove('visible');
+    // Re-arm auto-hide if controls currently visible
+    if (State.controlsVisible) showControls();
+    updateMediaSession();
+  }
+
+  function onPlayerPause() {
+    State.isPlaying = false;
+    updatePlayPauseIcon(false);
+    clearTimeout(State.controlsTimer); // keep controls visible while paused
+  }
+
+  function onPlayerEnded() {
+    State.isPlaying = false;
+    updatePlayPauseIcon(false);
+    stopProgressPolling();
+    playNext();
+  }
+
+  function onPlayerBuffering() {
+    DOM.bufferingOverlay.classList.add('visible');
+  }
+
+  function onPlayerCanPlay() {
+    DOM.bufferingOverlay.classList.remove('visible');
+  }
+
+  function onPlayerError(isInit) {
+    showToast('⚠ Could not load video — skipping…', 2500);
+    setTimeout(playNext, 1200);
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     YOUTUBE IFRAME API LOADER
+     Loads script once; resolves all queued promises on ready.
+  ═══════════════════════════════════════════════════════ */
+  let ytAPIReady   = false;
+  let ytAPILoading = false;
+  const ytAPIQueue = [];
+
+  function loadYouTubeAPI() {
+    if (ytAPIReady) return Promise.resolve();
+    return new Promise(resolve => {
+      ytAPIQueue.push(resolve);
+      if (!ytAPILoading) {
+        ytAPILoading = true;
+        window.onYouTubeIframeAPIReady = () => {
+          ytAPIReady = true;
+          ytAPIQueue.forEach(cb => cb());
+          ytAPIQueue.length = 0;
+        };
+        const s = document.createElement('script');
+        s.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(s);
+      }
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     VIMEO POSTMESSAGE EVENT HANDLER
+     Receives events from the Vimeo iframe embed.
+  ═══════════════════════════════════════════════════════ */
+  function handleVimeoMessage(e) {
+    if (AP.type !== 'vimeo') return;
+    if (e.origin !== 'https://player.vimeo.com') return;
+
+    let data;
+    try { data = JSON.parse(e.data); } catch { return; }
+
+    const evt = data.event;
+    const val = data.data;
+
+    if (evt === 'ready') {
+      // Subscribe to the events we need
+      ['play', 'pause', 'finish', 'playProgress', 'bufferstart', 'bufferend', 'error'].forEach(name => {
+        vmMsg('addEventListener', name);
+      });
+      // Set volume and get duration
+      const vol = parseFloat(DOM.volumeSlider.value) || 0.5;
+      vmMsg('setVolume', vol);
+      vmMsg('getDuration');
+    } else if (evt === 'play') {
+      onPlayerPlay();
+      if (!AP._vmFromInit) showControls();
+      AP._vmFromInit = false;
+    } else if (evt === 'pause') {
+      onPlayerPause();
+    } else if (evt === 'finish') {
+      onPlayerEnded();
+    } else if (evt === 'playProgress') {
+      AP._currentTime = val?.seconds   || 0;
+      AP._duration    = val?.duration  || AP._duration;
+      syncProgressBar(AP._currentTime, AP._duration, null);
+    } else if (evt === 'bufferstart') {
+      onPlayerBuffering();
+    } else if (evt === 'bufferend') {
+      onPlayerCanPlay();
+    } else if (evt === 'getDuration') {
+      AP._duration = val || 0;
+      DOM.timeDuration.textContent = formatTime(AP._duration);
+    } else if (evt === 'error') {
+      onPlayerError();
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     CREATE YOUTUBE PLAYER
+  ═══════════════════════════════════════════════════════ */
+  function createYouTubePlayer(videoId, fromInit) {
+    DOM.ytPlayerDiv.innerHTML = ''; // clear previous
+
+    AP.yt = new YT.Player(DOM.ytPlayerDiv, {
+      videoId,
+      width:  '100%',
+      height: '100%',
+      playerVars: {
+        autoplay:        1,
+        mute:            1,
+        controls:        0,
+        rel:             0,
+        iv_load_policy:  3,
+        modestbranding:  1,
+        playsinline:     1,
+        enablejsapi:     1,
+        fs:              0,
+      },
+      events: {
+        onReady(e) {
+          // Unmute and sync volume
+          e.target.unMute();
+          e.target.setVolume(parseFloat(DOM.volumeSlider.value) * 100);
+          AP._duration = e.target.getDuration() || 0;
+          DOM.timeDuration.textContent = formatTime(AP._duration);
+        },
+        onStateChange(e) {
+          /* YT.PlayerState: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering */
+          switch (e.data) {
+            case YT.PlayerState.PLAYING:
+              onPlayerPlay();
+              startProgressPolling();
+              if (!fromInit) showControls();
+              fromInit = false; // subsequent plays are user-initiated
+              break;
+            case YT.PlayerState.PAUSED:
+              onPlayerPause();
+              stopProgressPolling();
+              break;
+            case YT.PlayerState.ENDED:
+              stopProgressPolling();
+              onPlayerEnded();
+              break;
+            case YT.PlayerState.BUFFERING:
+              onPlayerBuffering();
+              break;
+            case -1: // unstarted — try playing
+              e.target.playVideo();
+              break;
+          }
+        },
+        onError() {
+          onPlayerError(fromInit);
+        },
+      },
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     CREATE VIMEO PLAYER (postMessage — no SDK)
+     Sets iframe src directly; communication via postMessage.
+     The 'ready' event triggers subscription to all other events.
+  ═══════════════════════════════════════════════════════ */
+  function createVimeoPlayer(videoId, fromInit) {
+    AP._vmFromInit = fromInit;
+    window.addEventListener('message', handleVimeoMessage);
+
+    const params = new URLSearchParams({
+      autoplay: 1,
+      controls: 0,
+      title:    0,
+      byline:   0,
+      portrait: 0,
+      api:      1,
+    });
+    DOM.vmPlayer.src = `https://player.vimeo.com/video/${videoId}?${params}`;
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     PLAYER — build full playback queue
+  ═══════════════════════════════════════════════════════ */
+  function buildQueue() {
+    const q = [];
+    if (State.introVideo?.url) q.push(State.introVideo);
+    q.push(...State.playlist.filter(v => v?.url));
+    return q;
+  }
+
+  async function loadVideo(index, fromInit = false) {
+    const queue = buildQueue();
+
+    if (queue.length === 0) {
+      AP.destroy();
+      showPlayerType('native');
+      DOM.emptyState.style.display = '';
+      DOM.video.removeAttribute('src');
+      DOM.video.load();
+      updatePlayPauseIcon(false);
+      syncProgressBar(0, 0, null);
+      return;
+    }
+
+    DOM.emptyState.style.display = 'none';
+    const item = queue[index];
+    if (!item) return;
+
+    State.currentIndex = index;
+
+    // Update title overlays
+    const title = item.title || item.url;
+    DOM.titleText.textContent     = title;
+    DOM.controlsTitle.textContent = title;
+    showTitleOverlay();
+
+    // Reset progress
+    syncProgressBar(0, 0, null);
+    DOM.timeDuration.textContent = '0:00';
+
+    // Detect video type and route to correct player
+    const info = detectVideoInfo(item.url);
+    AP.destroy(); // tear down previous player
+    AP.type = info.type;
+
+    if (info.type === 'native') {
+      showPlayerType('native');
+      DOM.video.muted  = true;
+      DOM.video.volume = parseFloat(DOM.volumeSlider.value);
+      DOM.video.src = item.url;
+      DOM.video.load();
+      DOM.video.play().then(() => {
+        DOM.video.muted = false;
+      }).catch(() => {
+        if (!fromInit) showControls();
+      });
+
+    } else if (info.type === 'youtube') {
+      showPlayerType('youtube');
+      try {
+        await loadYouTubeAPI();
+        createYouTubePlayer(info.id, fromInit);
+      } catch {
+        showToast('⚠ YouTube player failed to load');
+        setTimeout(playNext, 1200);
+      }
+
+    } else if (info.type === 'vimeo') {
+      showPlayerType('vimeo');
+      createVimeoPlayer(info.id, fromInit);
+    }
+  }
+
+  function playNext() {
+    const queue = buildQueue();
+    const next  = State.currentIndex + 1;
+    if (next < queue.length) {
+      loadVideo(next);
+    } else {
+      State.isPlaying = false;
+      updatePlayPauseIcon(false);
+      showControls();
+    }
+  }
+
+  function playPrev() {
+    if (AP.currentTime > 3) {
+      AP.seek(0);
+    } else {
+      const prev = State.currentIndex - 1;
+      if (prev >= 0) loadVideo(prev);
+      else AP.seek(0);
+    }
+  }
+
+  function startPlayback() {
+    const queue = buildQueue();
+    if (queue.length > 0) loadVideo(0);
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     CONTROLS VISIBILITY
+  ═══════════════════════════════════════════════════════ */
+  const CONTROLS_HIDE_DELAY = 3000;
+
+  function showControls(autoHide = true) {
+    State.controlsVisible = true;
+    DOM.titleOverlay.classList.remove('visible'); // hide title overlay when controls appear
+    clearTimeout(titleTimer);
+    DOM.controlsOverlay.classList.add('visible');
+    DOM.tabBar.classList.remove('tab-bar--hidden'); // reveal nav with controls
+    clearTimeout(State.controlsTimer);
+    if (autoHide && State.isPlaying) {
+      State.controlsTimer = setTimeout(hideControls, CONTROLS_HIDE_DELAY);
+    }
+  }
+
+  function hideControls() {
+    State.controlsVisible = false;
+    DOM.controlsOverlay.classList.remove('visible');
+    clearTimeout(State.controlsTimer);
+    // Hide tab bar only when on Home (immersive video mode)
+    if ($('panel-home').classList.contains('panel--active')) {
+      DOM.tabBar.classList.add('tab-bar--hidden');
+    }
+  }
+
+  function toggleControls() {
+    if (State.controlsVisible) hideControls();
+    else showControls();
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     TITLE OVERLAY
+  ═══════════════════════════════════════════════════════ */
+  let titleTimer = null;
+  function showTitleOverlay() {
+    if (State.controlsVisible) return; // controls bar already shows the title
+    DOM.titleOverlay.classList.add('visible');
+    clearTimeout(titleTimer);
+    titleTimer = setTimeout(() => DOM.titleOverlay.classList.remove('visible'), 5000);
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     PLAY / PAUSE ICON SYNC
+  ═══════════════════════════════════════════════════════ */
+  function updatePlayPauseIcon(playing) {
+    DOM.iconPlay.style.display  = playing ? 'none' : '';
+    DOM.iconPause.style.display = playing ? ''     : 'none';
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     SEEK — pointer events on progress bar
+  ═══════════════════════════════════════════════════════ */
+  function seekToPointer(e) {
+    const rect   = DOM.progressContainer.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const ratio  = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const dur    = AP.duration;
+    if (dur) {
+      const target = ratio * dur;
+      AP.seek(target);
+      if (AP.type === 'native') {
+        syncProgressBar(target, dur,
+          DOM.video.buffered.length ? DOM.video.buffered.end(DOM.video.buffered.length - 1) : null
+        );
+      } else {
+        AP._currentTime = target;
+        syncProgressBar(target, dur, null);
+      }
+    }
+  }
+
+  DOM.progressContainer.addEventListener('pointerdown', e => {
+    State.isSeeking = true;
+    seekToPointer(e);
+    DOM.progressContainer.setPointerCapture(e.pointerId);
+  });
+
+  DOM.progressContainer.addEventListener('pointermove', e => {
+    if (State.isSeeking) seekToPointer(e);
+  });
+
+  DOM.progressContainer.addEventListener('pointerup', e => {
+    if (State.isSeeking) { seekToPointer(e); State.isSeeking = false; }
+  });
+
+  /* ═══════════════════════════════════════════════════════
+     NATIVE VIDEO ELEMENT EVENTS
+  ═══════════════════════════════════════════════════════ */
+  const vid = DOM.video;
+
+  vid.addEventListener('play',     onPlayerPlay);
+  vid.addEventListener('pause',    onPlayerPause);
+  vid.addEventListener('ended',    onPlayerEnded);
+  vid.addEventListener('waiting',  onPlayerBuffering);
+  vid.addEventListener('canplay',  onPlayerCanPlay);
+  vid.addEventListener('playing',  onPlayerCanPlay);
+
+  vid.addEventListener('timeupdate', () => {
+    if (AP.type !== 'native' || State.isSeeking) return;
+    const buf = vid.buffered.length ? vid.buffered.end(vid.buffered.length - 1) : null;
+    syncProgressBar(vid.currentTime, vid.duration, buf);
+  });
+
+  vid.addEventListener('durationchange', () => {
+    if (AP.type !== 'native') return;
+    syncProgressBar(vid.currentTime, vid.duration, null);
+  });
+
+  vid.addEventListener('loadedmetadata', () => {
+    if (AP.type !== 'native') return;
+    DOM.timeDuration.textContent = formatTime(vid.duration);
+  });
+
+  vid.addEventListener('error', () => {
+    if (AP.type !== 'native') return;
+    onPlayerError(false);
+  });
+
+  /* ═══════════════════════════════════════════════════════
+     PLAYER TAP TARGET — tap to toggle controls
+     Double-tap → seek ±10s
+  ═══════════════════════════════════════════════════════ */
+  let lastTap = 0;
+
+  DOM.playerTapTarget.addEventListener('touchend', e => {
+    const now  = Date.now();
+    const diff = now - lastTap;
+    lastTap    = now;
+
+    if (diff > 50 && diff < 300) {
+      // Double-tap: seek
+      const rect    = DOM.playerTapTarget.getBoundingClientRect();
+      const x       = e.changedTouches[0].clientX;
+      const isRight = x > rect.width / 2;
+      const delta   = isRight ? 10 : -10;
+      AP.seek(Math.max(0, Math.min(AP.duration || 0, AP.currentTime + delta)));
+
+      const ripple = document.createElement('div');
+      ripple.className = 'seek-ripple';
+      ripple.style.left = x + 'px';
+      ripple.style.top  = e.changedTouches[0].clientY + 'px';
+      $('panel-home').appendChild(ripple);
+      ripple.addEventListener('animationend', () => ripple.remove());
+      showToast(isRight ? '+10s' : '−10s', 800);
+    } else {
+      // Single tap: toggle controls
+      toggleControls();
+    }
+  }, { passive: true });
+
+  // Desktop click on tap-target
+  DOM.playerTapTarget.addEventListener('click', toggleControls);
+
+  // Tap on controls overlay background → hide controls
+  DOM.controlsOverlay.addEventListener('click', e => {
+    if (e.target === DOM.controlsOverlay) hideControls();
+  });
+
+  /* ═══════════════════════════════════════════════════════
+     CONTROL BUTTON HANDLERS
+  ═══════════════════════════════════════════════════════ */
+
+  // Play / Pause
+  DOM.btnPlayPause.addEventListener('click', e => {
+    e.stopPropagation();
+    if (State.isPlaying) {
+      AP.pause();
+    } else {
+      if (!AP.type) { startPlayback(); return; }
+      AP.play();
+    }
+    showControls();
+  });
+
+  // Prev / Next
+  DOM.btnPrev.addEventListener('click', e => { e.stopPropagation(); playPrev(); showControls(); });
+  DOM.btnNext.addEventListener('click', e => { e.stopPropagation(); playNext(); showControls(); });
+
+  // Mute toggle
+  DOM.btnMute.addEventListener('click', e => {
+    e.stopPropagation();
+    if (AP.muted || DOM.volumeSlider.value === '0') {
+      AP.unmute();
+      DOM.iconVolume.style.display = '';
+      DOM.iconMute.style.display   = 'none';
+      if (DOM.volumeSlider.value === '0') DOM.volumeSlider.value = '0.5';
+    } else {
+      AP.mute();
+      DOM.iconVolume.style.display = 'none';
+      DOM.iconMute.style.display   = '';
+    }
+    showControls();
+  });
+
+  // Volume slider
+  DOM.volumeSlider.addEventListener('input', e => {
+    e.stopPropagation();
+    const v = parseFloat(DOM.volumeSlider.value);
+    AP.setVolume(v);
+    const muted = v === 0;
+    DOM.iconVolume.style.display = muted ? 'none' : '';
+    DOM.iconMute.style.display   = muted ? ''     : 'none';
+  });
+
+  // Playback speed
+  DOM.speedSelect.addEventListener('change', e => {
+    e.stopPropagation();
+    AP.setPlaybackRate(parseFloat(DOM.speedSelect.value));
+    showControls();
+  });
+
+  // Share button
+  DOM.btnShare.addEventListener('click', async e => {
+    e.stopPropagation();
+    const queue = buildQueue();
+    const item  = queue[State.currentIndex];
+    const url   = item?.url || window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ url, title: DOM.controlsTitle.textContent });
+      } else {
+        await navigator.clipboard.writeText(url);
+        showToast('✓ Link copied to clipboard');
+      }
+    } catch {
+      showToast('Could not copy link');
+    }
+    showControls();
+  });
+
+  /* ═══════════════════════════════════════════════════════
+     SWIPE GESTURES (next / prev)
+  ═══════════════════════════════════════════════════════ */
+  DOM.playerTapTarget.addEventListener('touchstart', e => {
+    State.swipeStartX = e.touches[0].clientX;
+    State.swipeStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  DOM.playerTapTarget.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - State.swipeStartX;
+    const dy = e.changedTouches[0].clientY - State.swipeStartY;
+    // Horizontal swipe only (dx dominates, minimum 60px)
+    if (Math.abs(dx) > Math.abs(dy) * 1.5 && Math.abs(dx) > 60) {
+      if (dx < 0) playNext(); else playPrev();
+    }
+  }, { passive: true });
+
+  /* ═══════════════════════════════════════════════════════
+     CREATE TAB — DOM refs
+  ═══════════════════════════════════════════════════════ */
+  const CRE = {
+    introUrl:     $('intro-url'),
+    introTitle:   $('intro-title'),
+    btnSetIntro:   $('btn-set-intro'),
+    btnClearIntro: $('btn-clear-intro'),
+    introPreview:  $('intro-preview'),
+    addUrl:       $('add-url'),
+    addTitle:     $('add-title'),
+    btnAdd:       $('btn-add-video'),
+    list:         $('playlist-list'),
+    count:        $('playlist-count'),
+    empty:        $('playlist-empty'),
+    btnClear:     $('btn-clear-playlist'),
+  };
+
+  /* ── HTML escape (XSS safety) ── */
+  function esc(str) {
+    return String(str ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── URL validator ── */
+  function isValidUrl(str) {
+    try { new URL(str); return true; } catch { return false; }
+  }
+
+  /* ── Sync home empty state ── */
+  function updateHomeEmptyState() {
+    DOM.emptyState.style.display = buildQueue().length === 0 ? '' : 'none';
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     RENDER — intro preview
+  ═══════════════════════════════════════════════════════ */
+  function renderIntroPreview() {
+    const intro = State.introVideo;
+    if (intro?.url) {
+      CRE.introPreview.innerHTML =
+        `<span class="intro-dot"></span><span>${esc(intro.title || intro.url)}</span>`;
+    } else {
+      CRE.introPreview.innerHTML = '';
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     RENDER — playlist list
+  ═══════════════════════════════════════════════════════ */
+  function renderPlaylist() {
+    const list = State.playlist;
+    CRE.count.textContent   = list.length;
+    CRE.empty.style.display = list.length === 0 ? '' : 'none';
+    CRE.list.innerHTML      = '';
+
+    list.forEach((item, i) => {
+      const li = document.createElement('li');
+      li.className     = 'playlist-item';
+      li.dataset.index = i;
+      li.draggable     = true;
+      li.innerHTML = `
+        <span class="playlist-item__drag" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="9"  cy="4"  r="1.5"/><circle cx="15" cy="4"  r="1.5"/>
+            <circle cx="9"  cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/>
+            <circle cx="9"  cy="20" r="1.5"/><circle cx="15" cy="20" r="1.5"/>
+          </svg>
+        </span>
+        <span class="playlist-item__info">
+          <span class="playlist-item__title">${esc(item.title || 'Untitled')}</span>
+          <span class="playlist-item__url">${esc(item.url)}</span>
+        </span>
+        <button class="playlist-item__remove ctrl-btn ctrl-btn--sm"
+                aria-label="Remove ${esc(item.title || 'video')}">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59
+                     6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>`;
+
+      li.querySelector('.playlist-item__remove')
+        .addEventListener('click', e => { e.stopPropagation(); removeVideo(i); });
+
+      li.addEventListener('dragstart', dndStart);
+      li.addEventListener('dragover',  dndOver);
+      li.addEventListener('dragleave', dndLeave);
+      li.addEventListener('drop',      dndDrop);
+      li.addEventListener('dragend',   dndEnd);
+
+      li.querySelector('.playlist-item__drag')
+        .addEventListener('touchstart', touchDragStart, { passive: true });
+
+      CRE.list.appendChild(li);
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     PLAYLIST MUTATIONS
+  ═══════════════════════════════════════════════════════ */
+  function addVideo(url, title) {
+    url = url.trim();
+    if (!url)             { showToast('Enter a video URL'); return false; }
+    if (!isValidUrl(url)) { showToast('Invalid URL — check and retry'); return false; }
+    State.playlist.push({ url, title: title.trim() });
+    Storage.save(); renderPlaylist(); updateHomeEmptyState();
+    showToast('✓ Added to playlist');
+    return true;
+  }
+
+  function removeVideo(index) {
+    State.playlist.splice(index, 1);
+    if (State.currentIndex > 0 && index < State.currentIndex) State.currentIndex--;
+    Storage.save(); renderPlaylist(); updateHomeEmptyState();
+    showToast('Removed');
+  }
+
+  function setIntroVideo(url, title) {
+    url = url.trim();
+    if (!url)             { showToast('Enter a URL'); return; }
+    if (!isValidUrl(url)) { showToast('Invalid URL'); return; }
+    State.introVideo = { url, title: title.trim() };
+    Storage.save(); renderIntroPreview(); updateHomeEmptyState();
+    showToast('✓ Intro video set');
+  }
+
+  function clearPlaylist() {
+    if (State.playlist.length === 0 && !State.introVideo) return;
+    AP.destroy();
+    showPlayerType('native');
+    State.playlist   = [];
+    State.introVideo = null;
+    State.currentIndex = -1;
+    Storage.save(); renderPlaylist(); renderIntroPreview(); updateHomeEmptyState();
+    CRE.introUrl.value = ''; CRE.introTitle.value = '';
+    showToast('Playlist cleared');
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     DESKTOP DRAG-AND-DROP
+  ═══════════════════════════════════════════════════════ */
+  let dndSrc = null;
+
+  function dndStart(e) {
+    dndSrc = parseInt(this.dataset.index);
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  function dndOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    this.classList.add('drag-over');
+  }
+  function dndLeave() { this.classList.remove('drag-over'); }
+  function dndDrop(e) {
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    const dst = parseInt(this.dataset.index);
+    if (dndSrc === null || dndSrc === dst) return;
+    State.playlist.splice(dst, 0, State.playlist.splice(dndSrc, 1)[0]);
+    Storage.save(); renderPlaylist();
+  }
+  function dndEnd() {
+    this.classList.remove('dragging');
+    dndSrc = null;
+    CRE.list.querySelectorAll('.playlist-item').forEach(el => el.classList.remove('drag-over','dragging'));
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     MOBILE TOUCH DRAG-AND-DROP
+  ═══════════════════════════════════════════════════════ */
+  let tdEl=null, tdIdx=null, tdClone=null, tdOffY=0;
+
+  function touchDragStart(e) {
+    tdEl  = this.closest('.playlist-item');
+    tdIdx = parseInt(tdEl.dataset.index);
+    const t = e.touches[0], r = tdEl.getBoundingClientRect();
+    tdOffY  = t.clientY - r.top;
+
+    tdClone = tdEl.cloneNode(true);
+    Object.assign(tdClone.style, {
+      position:'fixed', zIndex:999, opacity:0.9, pointerEvents:'none',
+      left: r.left+'px', top: r.top+'px', width: r.width+'px',
+      borderRadius:'12px', boxShadow:'0 8px 32px rgba(0,0,0,0.5)',
+      background:'var(--bg-3)',
+    });
+    document.body.appendChild(tdClone);
+    tdEl.style.opacity = '0.3';
+    document.addEventListener('touchmove', touchDragMove, { passive: false });
+    document.addEventListener('touchend',  touchDragEnd,  { passive: true  });
+  }
+
+  function touchDragMove(e) {
+    e.preventDefault();
+    if (!tdClone) return;
+    const t = e.touches[0];
+    tdClone.style.top = (t.clientY - tdOffY) + 'px';
+
+    tdClone.style.display = 'none';
+    const hit    = document.elementFromPoint(t.clientX, t.clientY);
+    tdClone.style.display = '';
+    const target = hit?.closest('.playlist-item');
+    CRE.list.querySelectorAll('.playlist-item')
+      .forEach(item => item.classList.toggle('drag-over', item === target && item !== tdEl));
+  }
+
+  function touchDragEnd(e) {
+    document.removeEventListener('touchmove', touchDragMove);
+    document.removeEventListener('touchend',  touchDragEnd);
+    if (tdClone)  { tdClone.remove(); tdClone = null; }
+    if (tdEl)     { tdEl.style.opacity = ''; }
+
+    const t      = e.changedTouches[0];
+    const hit    = document.elementFromPoint(t.clientX, t.clientY);
+    const target = hit?.closest('.playlist-item');
+
+    if (target && target !== tdEl) {
+      const dstIdx = parseInt(target.dataset.index);
+      State.playlist.splice(dstIdx, 0, State.playlist.splice(tdIdx, 1)[0]);
+      Storage.save();
+    }
+    tdEl = tdIdx = null;
+    renderPlaylist();
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     CREATE TAB — BUTTON WIRING
+  ═══════════════════════════════════════════════════════ */
+  CRE.btnSetIntro.addEventListener('click', () => {
+    setIntroVideo(CRE.introUrl.value, CRE.introTitle.value);
+  });
+
+  CRE.btnClearIntro.addEventListener('click', () => {
+    State.introVideo = null;
+    CRE.introUrl.value   = '';
+    CRE.introTitle.value = '';
+    Storage.save();
+    renderIntroPreview();
+    updateHomeEmptyState();
+    showToast('Intro cleared');
+  });
+
+  CRE.introUrl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); CRE.introTitle.focus(); }
+  });
+  CRE.introUrl.addEventListener('blur', () => autoFillTitle(CRE.introUrl, CRE.introTitle));
+  CRE.introTitle.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); CRE.btnSetIntro.click(); }
+  });
+
+  CRE.btnAdd.addEventListener('click', () => {
+    const ok = addVideo(CRE.addUrl.value, CRE.addTitle.value);
+    if (ok) { CRE.addUrl.value = ''; CRE.addTitle.value = ''; CRE.addUrl.focus(); }
+  });
+
+  CRE.addUrl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); CRE.addTitle.focus(); }
+  });
+  CRE.addUrl.addEventListener('blur', () => autoFillTitle(CRE.addUrl, CRE.addTitle));
+  CRE.addTitle.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); CRE.btnAdd.click(); }
+  });
+
+  CRE.btnClear.addEventListener('click', () => {
+    if (confirm('Clear all videos and intro?')) clearPlaylist();
+  });
+
+  // PREVIEW — restart from top and switch to Home
+  $('btn-preview').addEventListener('click', () => {
+    const queue = buildQueue();
+    if (queue.length === 0) { showToast('Add videos first'); return; }
+    switchTab('home');
+    loadVideo(0, false); // user-initiated → will show controls on start
+  });
+
+  // ABOUT PREVIEW — switch to About tab
+  $('btn-about-preview').addEventListener('click', () => {
+    switchTab('about');
+  });
+
+  /* ═══════════════════════════════════════════════════════
+     ABOUT TAB — save / clear
+  ═══════════════════════════════════════════════════════ */
+  function renderAboutDisplay() {
+    $('about-display').textContent = State.aboutText;
+  }
+
+  $('about-text').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      $('btn-about-save').click();
+    }
+  });
+
+  $('btn-about-save').addEventListener('click', () => {
+    State.aboutText = $('about-text').value.trim();
+    Storage.save();
+    renderAboutDisplay();
+    showToast('✓ About saved');
+    switchCreateSubtab('playlist');
+  });
+
+  $('btn-about-clear').addEventListener('click', () => {
+    $('about-text').value = '';
+    State.aboutText = '';
+    Storage.save();
+    renderAboutDisplay();
+    showToast('About cleared');
+  });
+
+  /* ═══════════════════════════════════════════════════════
+     INIT
+  ═══════════════════════════════════════════════════════ */
+  function init() {
+    // Restore only About text (playlist resets on reload by design)
+    try { State.aboutText = localStorage.getItem(Storage.KEY_ABOUT) || ''; } catch { State.aboutText = ''; }
+    $('about-text').value = State.aboutText;
+    renderAboutDisplay();
+
+    hideControls();                                 // controls OFF by default
+    DOM.tabBar.classList.add('tab-bar--hidden');    // tab bar hidden on Home
+    renderIntroPreview();
+    renderPlaylist();
+    updateHomeEmptyState();
+
+    // Autoplay first item in queue if available
+    const queue = buildQueue();
+    if (queue.length > 0) {
+      loadVideo(0, true); // fromInit=true → won't show controls if blocked
+    }
+  }
+
+  init();
+
+  /* ═══════════════════════════════════════════════════════
+     PWA — INLINE MANIFEST via Blob URL
+  ═══════════════════════════════════════════════════════ */
+  (function injectManifest() {
+    const manifest = {
+      name: 'VideoApp',
+      short_name: 'VideoApp',
+      description: 'Full-screen mobile video player',
+      start_url: '.',
+      display: 'standalone',
+      orientation: 'any',
+      background_color: '#0a0a0f',
+      theme_color: '#0a0a0f',
+      icons: [
+        { src: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="%230a0a0f"/><path d="M43 20 H57 V43 H80 V57 H57 V80 H43 V57 H20 V43 H43 Z" fill="%23a78bfa"/></svg>',
+          sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+  })();
+
+  /* ═══════════════════════════════════════════════════════
+     PWA — SERVICE WORKER (best-effort blob registration)
+  ═══════════════════════════════════════════════════════ */
+  (function registerSW() {
+    if (!('serviceWorker' in navigator)) return;
+    const swCode = `
+      const CACHE = 'vapp-v3';
+      self.addEventListener('install', e => {
+        e.waitUntil(
+          caches.open(CACHE).then(c => c.addAll([self.location.href]))
+            .catch(() => {})
+        );
+        self.skipWaiting();
+      });
+      self.addEventListener('activate', e => {
+        e.waitUntil(
+          caches.keys().then(keys =>
+            Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+          )
+        );
+        self.clients.claim();
+      });
+      self.addEventListener('fetch', e => {
+        e.respondWith(
+          fetch(e.request).catch(() =>
+            caches.match(e.request).then(r => r || new Response(
+              '<h1 style="font-family:system-ui;color:#fff;background:#0a0a0f;height:100vh;display:flex;align-items:center;justify-content:center;margin:0">Offline</h1>',
+              { headers: { 'Content-Type': 'text/html' } }
+            ))
+          )
+        );
+      });
+    `;
+    const blob  = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(swUrl).catch(() => {});
+  })();
+
+  /* ═══════════════════════════════════════════════════════
+     PWA — INSTALL PROMPT
+  ═══════════════════════════════════════════════════════ */
+  let deferredInstall = null;
+
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredInstall = e;
+    const banner = $('install-banner');
+    if (banner) banner.style.display = 'flex';
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstall = null;
+    const banner = $('install-banner');
+    if (banner) banner.style.display = 'none';
+    showToast('✓ VideoApp installed!');
+  });
+
+  const btnInstall = $('btn-install');
+  if (btnInstall) {
+    btnInstall.addEventListener('click', async () => {
+      if (!deferredInstall) return;
+      deferredInstall.prompt();
+      const { outcome } = await deferredInstall.userChoice;
+      if (outcome === 'accepted') deferredInstall = null;
+    });
+  }
+
+  const btnDismiss = $('btn-install-dismiss');
+  if (btnDismiss) {
+    btnDismiss.addEventListener('click', () => {
+      const banner = $('install-banner');
+      if (banner) banner.style.display = 'none';
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     MEDIA SESSION API — lock screen / notification controls
+  ═══════════════════════════════════════════════════════ */
+  function updateMediaSession() {
+    if (!('mediaSession' in navigator)) return;
+    const queue = buildQueue();
+    const item  = queue[State.currentIndex];
+    if (!item) return;
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title:  item.title || 'VideoApp',
+      artist: 'VideoApp',
+      album:  `Track ${State.currentIndex + 1} of ${queue.length}`,
+    });
+
+    navigator.mediaSession.setActionHandler('play',          () => AP.play());
+    navigator.mediaSession.setActionHandler('pause',         () => AP.pause());
+    navigator.mediaSession.setActionHandler('previoustrack', () => playPrev());
+    navigator.mediaSession.setActionHandler('nexttrack',     () => playNext());
+    navigator.mediaSession.setActionHandler('seekforward',   () => AP.seek(Math.min(AP.duration, AP.currentTime + 10)));
+    navigator.mediaSession.setActionHandler('seekbackward',  () => AP.seek(Math.max(0, AP.currentTime - 10)));
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     KEYBOARD SHORTCUTS
+  ═══════════════════════════════════════════════════════ */
+  document.addEventListener('keydown', e => {
+    if (document.activeElement.matches('input, select, textarea')) return;
+    if (!$('panel-home').classList.contains('panel--active')) return;
+
+    switch (e.key) {
+      case ' ':
+      case 'k':
+        e.preventDefault();
+        DOM.btnPlayPause.click();
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        playNext();
+        break;
+      case 'ArrowLeft':
+        e.preventDefault();
+        playPrev();
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        location.reload();
+        break;
+      case 'm':
+        DOM.btnMute.click();
+        break;
+      case 'n':
+        playNext();
+        break;
+      case 'p':
+        playPrev();
+        break;
+    }
+  });
+
+  /* ═══════════════════════════════════════════════════════
+     OFFLINE DETECTION
+  ═══════════════════════════════════════════════════════ */
+  const offlineBar = $('offline-bar');
+
+  function setOnlineStatus() {
+    if (offlineBar) offlineBar.classList.toggle('visible', !navigator.onLine);
+  }
+
+  window.addEventListener('online',  setOnlineStatus);
+  window.addEventListener('offline', setOnlineStatus);
+  setOnlineStatus();
+
+  /* ═══════════════════════════════════════════════════════
+     VISIBILITY — hide controls when tab hidden
+  ═══════════════════════════════════════════════════════ */
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && State.isPlaying) {
+      hideControls();
+    }
+  });
+  </script>
+
+</body>
+</html>
