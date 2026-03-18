@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-D
+# VideoApp - v1 - vers-E
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -13,8 +13,9 @@ ADDS vers-B:
   - Remove YouTube TITLE Overlay (Still Broken)
 
 ADDS vers-C:
-  - Adding Option: 1: Of BLK Between Video Playback
-  - ???x
+  - Adding Option: 1.5: Of BLK Between Video Playback
+  - All Works and Looks Good
+  - 
 
 ===================================================
 
