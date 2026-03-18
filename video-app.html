@@ -463,8 +463,11 @@
 
     .ctrl-btn--icon    { width: 40px;  height: 40px; }
     .ctrl-btn--lg      { width: 52px;  height: 52px; }
-    .ctrl-btn--xl      { width: 68px;  height: 68px; background: rgba(255,255,255,0.12); }
-    .ctrl-btn--xl:hover{ background: rgba(255,255,255,0.20); }
+    .ctrl-btn--xl      { width: 68px;  height: 68px; background: rgba(0,229,255,0.15); }
+    .ctrl-btn--xl:hover{ background: rgba(0,229,255,0.25); }
+
+    /* Center prev/play/next — cyan */
+    .controls-center .ctrl-btn { color: #00e5ff; }
 
     .ctrl-btn svg      { width: 24px;  height: 24px; }
     .ctrl-btn--lg svg  { width: 28px;  height: 28px; }
@@ -2867,7 +2870,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v8';
+      const CACHE = 'vapp-v9';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
