@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-F
+# VideoApp - v1 - vers-G
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -24,6 +24,9 @@ ADDS vers-F
   - Added Full-Screen Toggle To Video Player
   - Can't Remove YouTube Meta Data (Share/Watch Later)
 
+ADDS vers-G
+  - Attribution Text To Video Player
+  
 
 ===================================================
 
