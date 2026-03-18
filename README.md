@@ -1,6 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-B
-
+# VideoApp - v1 - vers-C
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -12,7 +11,12 @@ ADDS vers-B:
   - Video Playback Buttons Larger & Darker Color Cyan
   - NO 13s
   - Remove YouTube TITLE Overlay (Still Broken)
-  - Adding 1 second 
+
+ADDS vers-C:
+  - Adding Option: 1: Of BLK Between Video Playback
+  - x
+
+===================================================
 
 A production-ready, single-file mobile video player PWA. No build tools, no dependencies — open the HTML file in any browser and go.
 
