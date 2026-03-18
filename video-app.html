@@ -528,22 +528,52 @@
     }
     .btn--preview:hover  { box-shadow: 0 4px 22px rgba(34,197,94,0.55); }
 
-    .btn--loop {
-      background: var(--surface);
-      border: 1px solid rgba(0,229,255,0.4);
-      color: rgba(0,229,255,0.6);
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.85rem;
-      padding: 8px 18px;
-      transition: background var(--t-fast), color var(--t-fast), border-color var(--t-fast), box-shadow var(--t-fast);
+    .toggle-switch {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      flex-shrink: 0;
     }
-    .btn--loop.loop-on {
-      background: rgba(0,229,255,0.15);
-      border-color: #00e5ff;
-      color: #00e5ff;
-      box-shadow: 0 0 10px rgba(0,229,255,0.3);
+    .toggle-switch__track {
+      display: flex;
+      align-items: center;
+      width: 54px;
+      height: 27px;
+      border-radius: 99px;
+      background: #444;
+      position: relative;
+      transition: background 0.25s;
+    }
+    .toggle-switch.loop-on .toggle-switch__track {
+      background: #22c55e;
+    }
+    .toggle-switch__label {
+      position: absolute;
+      left: 8px;
+      font-size: 0.55rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.05em;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .toggle-switch.loop-on .toggle-switch__label {
+      opacity: 1;
+    }
+    .toggle-switch__knob {
+      position: absolute;
+      left: 3px;
+      width: 21px;
+      height: 21px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      transition: left 0.25s;
+    }
+    .toggle-switch.loop-on .toggle-switch__knob {
+      left: 30px;
     }
 
     .tab-btn {
@@ -1296,15 +1326,6 @@
             </button>
             <button id="btn-clear-all" class="btn btn--danger">CLEAR ALL</button>
           </div>
-          <div style="margin: 0 16px 1em; display:flex; justify-content:center">
-            <button id="btn-loop-toggle" class="btn btn--loop" aria-pressed="false">
-              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="width:18px;height:18px">
-                <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
-              </svg>
-              LOOP: OFF
-            </button>
-          </div>
-
           <!-- Intro Video setter -->
           <div class="card" id="intro-card">
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
@@ -1379,9 +1400,20 @@
               No videos yet. Add one above.
             </div>
 
-            <button id="btn-clear-playlist" class="btn btn--danger btn--sm" style="margin-top:1rem">
-              Clear
-            </button>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem">
+              <button id="btn-clear-playlist" class="btn btn--danger btn--sm">
+                Clear
+              </button>
+              <div style="display:flex;align-items:center;gap:7px">
+                <span style="font-size:0.78rem;color:var(--text-2);letter-spacing:0.05em;font-weight:600">LOOP</span>
+                <button id="btn-loop-toggle" class="toggle-switch" role="switch" aria-pressed="false" aria-label="Loop playlist">
+                  <span class="toggle-switch__track">
+                    <span class="toggle-switch__label">ON</span>
+                    <span class="toggle-switch__knob"></span>
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -1868,18 +1900,6 @@
     State.isPlaying = true;
     updatePlayPauseIcon(true);
     DOM.bufferingOverlay.classList.remove('visible');
-    // Auto-unmute when playback confirmed — browser allows this once playing
-    if (AP.muted && !AP._mutedFlag) {
-      // native video muted by autoplay policy — unmute now
-      if (AP.type === 'native') DOM.video.muted = false;
-    }
-    if (AP.type === 'youtube' && AP.yt) {
-      AP.yt.unMute();
-      AP.yt.setVolume(parseFloat(DOM.volumeSlider.value) * 100);
-    }
-    if (AP.type === 'vimeo') {
-      vmMsg('setVolume', parseFloat(DOM.volumeSlider.value) || 0.5);
-    }
     // Re-arm auto-hide if controls currently visible
     if (State.controlsVisible) showControls();
     updateMediaSession();
@@ -2007,8 +2027,9 @@
       },
       events: {
         onReady(e) {
-          // Pre-set volume level (still muted — unmute happens in onPlayerPlay once playing)
-          e.target.setVolume(parseFloat(DOM.volumeSlider.value) * 100);
+          // Do NOT unMute here — calling unMute before play starts triggers
+          // browser autoplay policy and blocks playback (shows thumbnail only).
+          // Unmuting happens in onStateChange PLAYING once video is confirmed running.
           AP._duration = e.target.getDuration() || 0;
           DOM.timeDuration.textContent = formatTime(AP._duration);
         },
@@ -2016,6 +2037,9 @@
           /* YT.PlayerState: -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering */
           switch (e.data) {
             case YT.PlayerState.PLAYING:
+              // Video is now playing muted — safe to unmute
+              e.target.unMute();
+              e.target.setVolume(parseFloat(DOM.volumeSlider.value) * 100);
               onPlayerPlay();
               startProgressPolling();
               if (!fromInit) showControls();
@@ -2111,15 +2135,14 @@
 
     if (info.type === 'native') {
       showPlayerType('native');
-      DOM.video.muted  = false;
+      DOM.video.muted  = true;
       DOM.video.volume = parseFloat(DOM.volumeSlider.value);
       DOM.video.src = item.url;
       DOM.video.load();
-      DOM.video.play().catch(() => {
-        // Browser blocked unmuted autoplay — retry muted then unmute
-        DOM.video.muted = true;
-        DOM.video.play().then(() => { DOM.video.muted = false; })
-                        .catch(() => { if (!fromInit) showControls(); });
+      DOM.video.play().then(() => {
+        DOM.video.muted = false;
+      }).catch(() => {
+        if (!fromInit) showControls();
       });
 
     } else if (info.type === 'youtube') {
@@ -2138,13 +2161,16 @@
     }
   }
 
+  // First playlist index — 1 if intro exists, else 0
+  function firstPlaylistIdx() { return State.introVideo?.url ? 1 : 0; }
+
   function playNext() {
     const queue = buildQueue();
     const next  = State.currentIndex + 1;
     if (next < queue.length) {
       loadVideo(next);
     } else if (State.loop) {
-      loadVideo(0);
+      loadVideo(firstPlaylistIdx()); // loop skips intro
     } else {
       State.isPlaying = false;
       updatePlayPauseIcon(false);
@@ -2153,12 +2179,19 @@
   }
 
   function playPrev() {
+    const fpi = firstPlaylistIdx();
     if (AP.currentTime > 3) {
       AP.seek(0);
     } else {
-      const prev = State.currentIndex - 1;
-      if (prev >= 0) loadVideo(prev);
-      else AP.seek(0);
+      const queue = buildQueue();
+      const prev  = State.currentIndex - 1;
+      if (prev >= fpi) {
+        loadVideo(prev);                        // normal prev within playlist
+      } else if (State.currentIndex === 0) {
+        AP.seek(0);                             // on intro — restart it
+      } else {
+        loadVideo(queue.length - 1);            // wrap to last playlist item
+      }
     }
   }
 
@@ -2725,7 +2758,7 @@
   function updateLoopBtn() {
     btnLoop.classList.toggle('loop-on', State.loop);
     btnLoop.setAttribute('aria-pressed', State.loop);
-    btnLoop.lastChild.textContent = State.loop ? 'LOOP: ON' : 'LOOP: OFF';
+    btnLoop.classList.toggle('loop-on', State.loop);
   }
   btnLoop.addEventListener('click', () => {
     State.loop = !State.loop;
@@ -2771,6 +2804,7 @@
     Storage.load();
     $('about-text').value = State.aboutText;
     renderAboutDisplay();
+    updateLoopBtn(); // reflect persisted loop state
 
     // Restore intro fields from saved state
     if (State.introVideo) {
@@ -2787,7 +2821,7 @@
     // Autoplay first item in queue if available
     const queue = buildQueue();
     if (queue.length > 0) {
-      loadVideo(0, true); // fromInit=true → won't show controls if blocked
+      loadVideo(0, true);
     }
   }
 
@@ -2821,7 +2855,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v3';
+      const CACHE = 'vapp-v6';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
@@ -2928,11 +2962,11 @@
         break;
       case 'ArrowRight':
         e.preventDefault();
-        { const q = buildQueue(); const nx = State.currentIndex + 1; if (nx < q.length) loadVideo(nx); else if (q.length > 0) loadVideo(0); }
+        { const q = buildQueue(); const fpi = firstPlaylistIdx(); const nx = State.currentIndex + 1; if (nx < q.length) loadVideo(nx); else if (q.length > fpi) loadVideo(fpi); }
         break;
       case 'ArrowLeft':
         e.preventDefault();
-        { const prev = State.currentIndex - 1; if (prev >= 0) loadVideo(prev); else AP.seek(0); }
+        { const q = buildQueue(); const fpi = firstPlaylistIdx(); const prev = State.currentIndex - 1; if (prev >= fpi) loadVideo(prev); else if (State.currentIndex === 0) AP.seek(0); else if (q.length > 0) loadVideo(q.length - 1); }
         break;
       case 'ArrowUp':
         e.preventDefault();
