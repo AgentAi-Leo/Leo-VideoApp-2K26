@@ -12,10 +12,13 @@ ADDS vers-B:
   - NO 13s
   - Remove YouTube TITLE Overlay (Still Broken)
 
-ADDS vers-C:
+ADDS vers-C/D:
   - Adding Option: 1.5: Of BLK Between Video Playback
   - All Works and Looks Good
-  - 
+
+  ADDS vers-E
+  - Removed Player Controls/Loader While Auto-Playing
+  - SEXY AF NOW!
 
 ===================================================
 
