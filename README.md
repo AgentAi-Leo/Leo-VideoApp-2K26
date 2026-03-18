@@ -11,9 +11,8 @@ ADDS vers-B:
   - Move Menu to TOP od Screen
   - Video Playback Buttons Larger & Darker Color Cyan
   - NO 13s
-  - Remove YouTube TITLE Overlay
-  - 
-
+  - Remove YouTube TITLE Overlay (Still Broken)
+  - Adding 1 second 
 
 A production-ready, single-file mobile video player PWA. No build tools, no dependencies — open the HTML file in any browser and go.
 
