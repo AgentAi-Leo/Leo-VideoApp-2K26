@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-G
+# VideoApp - v1 - vers-H
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -28,6 +28,14 @@ ADDS vers-G
   - Attribution Text To Video Player
   - Added Platofrm Tgs: Youtube, Vimeo, OtherP
   - ALL WORKING AWESOME!!!
+
+ADDS vers-H
+  - Suuport For Google Drive & Dropbox links
+  - 
+
+
+
+
 
 ===================================================
 
