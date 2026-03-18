@@ -1283,11 +1283,12 @@
               <span class="speed-label">Speed</span>
               <div id="speed-scroll" class="speed-scroll" role="group" aria-label="Playback speed">
                 <button class="speed-btn" data-rate="0.5">0.5×</button>
-                <button class="speed-btn" data-rate="0.75">0.75×</button>
                 <button class="speed-btn speed-btn--active" data-rate="1">1×</button>
                 <button class="speed-btn" data-rate="1.25">1.25×</button>
                 <button class="speed-btn" data-rate="1.5">1.5×</button>
                 <button class="speed-btn" data-rate="2">2×</button>
+                <button class="speed-btn" data-rate="2.5">2.5×</button>
+                <button class="speed-btn" data-rate="3">3×</button>
               </div>
             </div>
 
@@ -1562,6 +1563,7 @@
     aboutText:       '',          // editable about/story text
     currentIndex:    -1,          // index into full queue (intro=0, then playlist)
     loop:            false,       // loop playlist when it ends
+    videoSpeeds:     {},          // { url: rate } — per-video playback speed
     isPlaying:       false,
     controlsVisible: false,       // starts OFF per spec
     controlsTimer:   null,        // auto-hide timeout id
@@ -1578,14 +1580,16 @@
     KEY_INTRO:    'vapp_intro',
     KEY_ABOUT:    'vapp_about',
     KEY_LOOP:     'vapp_loop',
+    KEY_SPEEDS:   'vapp_speeds',
 
     load() {
       try {
-        State.playlist   = JSON.parse(localStorage.getItem(this.KEY_PLAYLIST) || '[]');
-        State.introVideo = JSON.parse(localStorage.getItem(this.KEY_INTRO) || 'null');
-        State.aboutText  = localStorage.getItem(this.KEY_ABOUT) || '';
-        State.loop       = localStorage.getItem(this.KEY_LOOP) === 'true';
-      } catch { State.playlist = []; State.introVideo = null; State.aboutText = ''; State.loop = false; }
+        State.playlist    = JSON.parse(localStorage.getItem(this.KEY_PLAYLIST) || '[]');
+        State.introVideo  = JSON.parse(localStorage.getItem(this.KEY_INTRO) || 'null');
+        State.aboutText   = localStorage.getItem(this.KEY_ABOUT) || '';
+        State.loop        = localStorage.getItem(this.KEY_LOOP) === 'true';
+        State.videoSpeeds = JSON.parse(localStorage.getItem(this.KEY_SPEEDS) || '{}');
+      } catch { State.playlist = []; State.introVideo = null; State.aboutText = ''; State.loop = false; State.videoSpeeds = {}; }
     },
 
     save() {
@@ -1593,6 +1597,7 @@
       localStorage.setItem(this.KEY_INTRO,    JSON.stringify(State.introVideo));
       localStorage.setItem(this.KEY_ABOUT,    State.aboutText);
       localStorage.setItem(this.KEY_LOOP,     State.loop);
+      localStorage.setItem(this.KEY_SPEEDS,   JSON.stringify(State.videoSpeeds));
     },
   };
 
@@ -2056,6 +2061,9 @@
               // Video is now playing muted — safe to unmute
               e.target.unMute();
               e.target.setVolume(parseFloat(DOM.volumeSlider.value) * 100);
+              // Apply saved per-video speed
+              { const queue = buildQueue(); const item = queue[State.currentIndex];
+                if (item) e.target.setPlaybackRate(State.videoSpeeds[item.url] || 1); }
               onPlayerPlay();
               startProgressPolling();
               if (!fromInit) showControls();
@@ -2150,6 +2158,12 @@
     syncProgressBar(0, 0, null);
     DOM.timeDuration.textContent = '0:00';
 
+    // Apply saved speed for this video, update button UI
+    const savedRate = State.videoSpeeds[item.url] || 1;
+    DOM.speedScroll.querySelectorAll('.speed-btn').forEach(b => {
+      b.classList.toggle('speed-btn--active', parseFloat(b.dataset.rate) === savedRate);
+    });
+
     // Detect video type and route to correct player
     const info = detectVideoInfo(item.url);
     AP.destroy(); // tear down previous player
@@ -2159,10 +2173,12 @@
       showPlayerType('native');
       DOM.video.muted  = true;
       DOM.video.volume = parseFloat(DOM.volumeSlider.value);
+      DOM.video.playbackRate = savedRate;
       DOM.video.src = item.url;
       DOM.video.load();
       DOM.video.play().then(() => {
         DOM.video.muted = false;
+        DOM.video.playbackRate = savedRate; // re-apply after play (some browsers reset it)
       }).catch(() => {
         if (!fromInit) showControls();
       });
@@ -2435,7 +2451,11 @@
     e.stopPropagation();
     DOM.speedScroll.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('speed-btn--active'));
     btn.classList.add('speed-btn--active');
-    AP.setPlaybackRate(parseFloat(btn.dataset.rate));
+    const rate = parseFloat(btn.dataset.rate);
+    AP.setPlaybackRate(rate);
+    // Save speed for this video
+    const queue = buildQueue(); const item = queue[State.currentIndex];
+    if (item) { State.videoSpeeds[item.url] = rate; Storage.save(); }
     showControls();
   });
 
@@ -2879,7 +2899,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v18';
+      const CACHE = 'vapp-v19';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
