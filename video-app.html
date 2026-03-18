@@ -1429,7 +1429,7 @@
               </button>
               <label id="black-gap-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;color:var(--text-2);user-select:none">
                 <input type="checkbox" id="chk-black-gap" style="width:17px;height:17px;accent-color:#00e5ff;cursor:pointer" />
-                1s Black Between
+                Add 1.5 Seconds Black Between Videos
               </label>
               <div style="display:flex;align-items:center;gap:7px">
                 <button id="btn-loop-toggle" class="toggle-switch" role="switch" aria-pressed="false" aria-label="Loop playlist">
@@ -2253,7 +2253,7 @@
       blackOverlay.classList.remove('visible');
       gapActive = false;
       fn();
-    }, 1000);
+    }, 1770);
   }
 
   function playNext() {
@@ -2853,7 +2853,6 @@
 
   // BLACK GAP checkbox
   const chkBlackGap = $('chk-black-gap');
-  chkBlackGap.checked = State.blackGap;
   chkBlackGap.addEventListener('change', () => {
     State.blackGap = chkBlackGap.checked;
     Storage.save();
@@ -2911,6 +2910,7 @@
     $('about-text').value = State.aboutText;
     renderAboutDisplay();
     updateLoopBtn(); // reflect persisted loop state
+    $('chk-black-gap').checked = State.blackGap;
 
     // Restore intro fields from saved state
     if (State.introVideo) {
@@ -2963,7 +2963,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v26';
+      const CACHE = 'vapp-v29';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
