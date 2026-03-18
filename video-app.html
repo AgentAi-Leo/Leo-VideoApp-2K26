@@ -158,7 +158,8 @@
        YOUTUBE / VIMEO IFRAME CONTAINERS
     ═══════════════════════════════════════════════════ */
     #yt-player,
-    #vm-player {
+    #vm-player,
+    #drive-player {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -176,8 +177,9 @@
       pointer-events: none; /* prevent YouTube hover/pause overlays */
     }
 
-    /* Vimeo uses a pre-existing <iframe> element directly */
-    #vm-player {
+    /* Vimeo / Google Drive use pre-existing <iframe> elements */
+    #vm-player,
+    #drive-player {
       border: none;
     }
 
@@ -836,6 +838,8 @@
     }
     .platform-tag--youtube { background: #e00;    color: #fff; }
     .platform-tag--vimeo   { background: #00e5ff; color: #000; }
+    .platform-tag--dropbox { background: #0061fe; color: #fff; }
+    .platform-tag--drive   { background: #1e8e3e; color: #fff; }
     .platform-tag--other   { background: #ffd600; color: #000; }
 
     /* ── Playlist list ── */
@@ -1229,6 +1233,14 @@
         <iframe
           id="vm-player"
           allow="autoplay; fullscreen; picture-in-picture"
+          allowfullscreen
+          aria-hidden="true"
+        ></iframe>
+
+        <!-- Google Drive player iframe -->
+        <iframe
+          id="drive-player"
+          allow="autoplay; fullscreen"
           allowfullscreen
           aria-hidden="true"
         ></iframe>
@@ -1686,6 +1698,7 @@
     video:            $('video-player'),
     ytPlayerDiv:      $('yt-player'),
     vmPlayer:         $('vm-player'),
+    drivePlayer:      $('drive-player'),
     playerTapTarget:  $('player-tap-target'),
     bufferingOverlay: $('buffering-overlay'),
     titleOverlay:     $('title-overlay'),
@@ -1789,7 +1802,7 @@
 
   /* ═══════════════════════════════════════════════════════
      VIDEO TYPE DETECTION
-     Supports: YouTube (watch/short/embed), Vimeo, native video files
+     Supports: YouTube, Vimeo, Dropbox, Google Drive, native video files
   ═══════════════════════════════════════════════════════ */
   function detectVideoInfo(url) {
     // YouTube: watch?v=, embed/, shorts/, live/, v/, youtu.be/
@@ -1802,15 +1815,34 @@
     m = url.match(/(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)(\d+)/);
     if (m) return { type: 'vimeo', id: m[1] };
 
+    // Dropbox: transform share URL to direct streaming URL
+    if (/(?:www\.)?dropbox\.com\//.test(url)) {
+      try {
+        const u = new URL(url);
+        u.hostname = 'dl.dropboxusercontent.com';
+        u.searchParams.delete('dl');
+        return { type: 'dropbox', url: u.toString() };
+      } catch { /* fall through to native */ }
+    }
+
+    // Google Drive: drive.google.com/file/d/FILE_ID/...
+    m = url.match(/drive\.google\.com\/file\/d\/([^/?#]+)/);
+    if (m) return { type: 'drive', id: m[1] };
+
     // Native video file / stream
     return { type: 'native', url };
   }
 
   function platformTag(url) {
     const type = detectVideoInfo(url).type;
-    const map = { youtube: 'YouTube', vimeo: 'Vimeo', native: 'Other' };
-    const label = map[type] || 'Other';
-    return `<span class="platform-tag platform-tag--${type === 'native' ? 'other' : type}">${label}</span>`;
+    const cfg = {
+      youtube: ['YouTube', 'youtube'],
+      vimeo:   ['Vimeo',   'vimeo'],
+      dropbox: ['Dropbox', 'dropbox'],
+      drive:   ['Drive',   'drive'],
+    };
+    const [label, cls] = cfg[type] || ['Other', 'other'];
+    return `<span class="platform-tag platform-tag--${cls}">${label}</span>`;
   }
 
   /* ═══════════════════════════════════════════════════════
@@ -1831,6 +1863,16 @@
   }
 
   async function fetchVideoTitle(url) {
+    const info = detectVideoInfo(url.trim());
+    if (info.type === 'dropbox') {
+      try {
+        const u = new URL(url);
+        const filename = u.pathname.split('/').pop();
+        const name = decodeURIComponent(filename.replace(/\.[^.]+$/, '').replace(/[-_+]/g, ' '));
+        return name || 'Dropbox Video';
+      } catch { return 'Dropbox Video'; }
+    }
+    if (info.type === 'drive') return 'Google Drive Video';
     const data = await fetchOembed(url);
     return data?.title || null;
   }
@@ -1838,6 +1880,7 @@
   async function fetchVideoCreator(url) {
     const info = detectVideoInfo(url.trim());
     if (info.type === 'native') return null;
+    if (info.type === 'dropbox' || info.type === 'drive') return 'User';
     try {
       if (info.type === 'vimeo') {
         const res = await fetch(`https://vimeo.com/api/v2/video/${info.id}.json`);
@@ -1911,6 +1954,9 @@
         window.removeEventListener('message', handleVimeoMessage);
         try { DOM.vmPlayer.src = 'about:blank'; } catch {}
       }
+      if (this.type === 'drive') {
+        try { DOM.drivePlayer.src = 'about:blank'; } catch {}
+      }
       this.type = null;
       this._duration = 0;
       this._currentTime = 0;
@@ -1974,9 +2020,10 @@
      Hides/shows the correct player element.
   ═══════════════════════════════════════════════════════ */
   function showPlayerType(type) {
-    DOM.video.style.display       = type === 'native'  ? 'block' : 'none';
-    DOM.ytPlayerDiv.style.display = type === 'youtube' ? 'block' : 'none';
-    DOM.vmPlayer.style.display    = type === 'vimeo'   ? 'block' : 'none';
+    DOM.video.style.display        = type === 'native'  ? 'block' : 'none';
+    DOM.ytPlayerDiv.style.display  = type === 'youtube' ? 'block' : 'none';
+    DOM.vmPlayer.style.display     = type === 'vimeo'   ? 'block' : 'none';
+    DOM.drivePlayer.style.display  = type === 'drive'   ? 'block' : 'none';
   }
 
   /* ═══════════════════════════════════════════════════════
@@ -2255,10 +2302,23 @@
 
     State.currentIndex = index;
 
-    // Update title overlays
-    const title = item.title || item.url;
-    const breakIdx = title.length > 60 ? title.lastIndexOf(' ', 60) : -1;
-    const displayTitle = breakIdx > 0 ? title.slice(0, breakIdx) + '\n' + title.slice(breakIdx + 1) : title;
+    // Detect video type early (needed for title fallback + player routing)
+    const info = detectVideoInfo(item.url);
+
+    // Update title overlays — use filename fallback for Dropbox/Drive
+    const rawTitle = item.title || (() => {
+      if (info.type === 'dropbox') {
+        try {
+          const u = new URL(item.url);
+          const filename = u.pathname.split('/').pop();
+          return decodeURIComponent(filename.replace(/\.[^.]+$/, '').replace(/[-_+]/g, ' ')) || 'Dropbox Video';
+        } catch { return 'Dropbox Video'; }
+      }
+      if (info.type === 'drive') return 'Google Drive Video';
+      return item.url;
+    })();
+    const breakIdx = rawTitle.length > 60 ? rawTitle.lastIndexOf(' ', 60) : -1;
+    const displayTitle = breakIdx > 0 ? rawTitle.slice(0, breakIdx) + '\n' + rawTitle.slice(breakIdx + 1) : rawTitle;
     DOM.titleText.textContent       = displayTitle;
     DOM.controlsTitle.textContent   = displayTitle;
     DOM.titleCreator.textContent    = item.creator || '';
@@ -2292,8 +2352,7 @@
       b.classList.toggle('speed-btn--active', parseFloat(b.dataset.rate) === savedRate);
     });
 
-    // Detect video type and route to correct player
-    const info = detectVideoInfo(item.url);
+    // Route to correct player
     AP.destroy(); // tear down previous player
     AP.type = info.type;
 
@@ -2322,6 +2381,25 @@
     } else if (info.type === 'vimeo') {
       showPlayerType('vimeo');
       createVimeoPlayer(info.id, fromInit);
+
+    } else if (info.type === 'dropbox') {
+      AP.type = 'native'; // Dropbox streams through the native <video> element
+      showPlayerType('native');
+      DOM.video.muted  = true;
+      DOM.video.volume = parseFloat(DOM.volumeSlider.value);
+      DOM.video.playbackRate = savedRate;
+      DOM.video.src = info.url; // transformed dl.dropboxusercontent.com URL
+      DOM.video.load();
+      DOM.video.play().then(() => {
+        DOM.video.muted = false;
+        DOM.video.playbackRate = savedRate;
+      }).catch(() => {});
+
+    } else if (info.type === 'drive') {
+      showPlayerType('drive');
+      DOM.drivePlayer.src = `https://drive.google.com/file/d/${info.id}/preview`;
+      State.isPlaying = true;
+      updatePlayPauseIcon(true);
     }
   }
 
@@ -3095,7 +3173,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v54';
+      const CACHE = 'vapp-v55';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
