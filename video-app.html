@@ -1734,12 +1734,21 @@
 
   async function autoFillTitle(urlInput, titleInput) {
     const url = urlInput.value.trim();
-    if (!url || titleInput.value.trim()) return; // skip if no URL or title already set
+    if (!url) return;
+    // If the title was fetched for a different URL, clear it so we re-fetch
+    const prevUrl = titleInput.dataset.fetchedFor || '';
+    if (titleInput.value.trim() && prevUrl && prevUrl !== url) {
+      titleInput.value = '';
+    }
+    if (titleInput.value.trim()) return; // user-typed title — don't overwrite
     const prev = titleInput.placeholder;
     titleInput.placeholder = 'Fetching title…';
     const title = await fetchVideoTitle(url);
     titleInput.placeholder = prev;
-    if (title && !titleInput.value.trim()) titleInput.value = title;
+    if (title && !titleInput.value.trim()) {
+      titleInput.value = title;
+      titleInput.dataset.fetchedFor = url;
+    }
   }
 
   /* ═══════════════════════════════════════════════════════
@@ -2810,6 +2819,8 @@
     if (State.introVideo) {
       CRE.introUrl.value   = State.introVideo.url   || '';
       CRE.introTitle.value = State.introVideo.title || '';
+      // Mark which URL this title was fetched for so autoFillTitle can detect changes
+      CRE.introTitle.dataset.fetchedFor = State.introVideo.url || '';
     }
 
     hideControls();                                 // controls OFF by default
@@ -2855,7 +2866,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v6';
+      const CACHE = 'vapp-v7';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
