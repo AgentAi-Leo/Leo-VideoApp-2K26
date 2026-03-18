@@ -335,19 +335,19 @@
       transition: width 0.1s linear;
     }
 
-    .progress-buffered { background: rgba(255,255,255,0.3); }
-    .progress-played   { background: var(--accent-2); z-index: 1; }
+    .progress-buffered { background: rgba(0,229,255,0.2); }
+    .progress-played   { background: #00e5ff; z-index: 1; }
 
     .progress-thumb {
       position: absolute;
       left: 0%;
       width: 14px;
       height: 14px;
-      background: #fff;
+      background: #00e5ff;
       border-radius: 50%;
       transform: translateX(-50%);
       z-index: 2;
-      box-shadow: 0 0 6px rgba(124,106,247,0.7);
+      box-shadow: 0 0 6px rgba(0,229,255,0.7);
       pointer-events: none;
       transition: transform var(--t-fast), width var(--t-fast), height var(--t-fast);
     }
@@ -373,29 +373,35 @@
     .volume-row {
       display: flex;
       align-items: center;
+      justify-content: flex-end;
       gap: 10px;
     }
 
+    .volume-row .ctrl-btn { color: #00e5ff; }
+
     .volume-slider {
-      width: 80px;
+      width: 120px;
       flex: 0 0 auto;
-      height: 3px;
-      accent-color: var(--accent-2);
+      height: 5px;
+      accent-color: #00e5ff;
       cursor: pointer;
       -webkit-appearance: none;
       appearance: none;
-      background: rgba(255,255,255,0.25);
+      background: rgba(0,229,255,0.25);
       border-radius: 99px;
     }
 
     .volume-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      background: #fff;
+      width: 21px;
+      height: 21px;
+      background: #00e5ff;
       border-radius: 50%;
-      box-shadow: 0 0 4px rgba(124,106,247,0.5);
+      box-shadow: 0 0 8px rgba(0,229,255,0.7);
     }
+
+    .volume-row .ctrl-btn--icon { width: 60px; height: 60px; }
+    .volume-row .ctrl-btn--sm svg { width: 30px; height: 30px; }
 
     /* ── Speed row ── */
     .speed-row {
@@ -689,11 +695,12 @@
     /* ── Intro preview ── */
     .intro-preview {
       margin-top: 10px;
-      font-size: 0.82rem;
+      font-size: 1.23rem;
       color: var(--text-2);
       min-height: 0;
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
     }
 
@@ -1175,6 +1182,14 @@
 
             <!-- Volume row -->
             <div class="volume-row">
+              <input
+                id="volume-slider"
+                class="volume-slider"
+                type="range"
+                min="0" max="1" step="0.02"
+                value="0.5"
+                aria-label="Volume"
+              />
               <button id="btn-mute" class="ctrl-btn ctrl-btn--icon ctrl-btn--sm" aria-label="Mute / Unmute">
                 <!-- Volume icon -->
                 <svg id="icon-volume" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -1185,15 +1200,6 @@
                   <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
                 </svg>
               </button>
-
-              <input
-                id="volume-slider"
-                class="volume-slider"
-                type="range"
-                min="0" max="1" step="0.02"
-                value="0.5"
-                aria-label="Volume"
-              />
             </div>
 
             <!-- Playback speed selector -->
@@ -2041,14 +2047,15 @@
 
     if (info.type === 'native') {
       showPlayerType('native');
-      DOM.video.muted  = true;
+      DOM.video.muted  = false;
       DOM.video.volume = parseFloat(DOM.volumeSlider.value);
       DOM.video.src = item.url;
       DOM.video.load();
-      DOM.video.play().then(() => {
-        DOM.video.muted = false;
-      }).catch(() => {
-        if (!fromInit) showControls();
+      DOM.video.play().catch(() => {
+        // Browser blocked unmuted autoplay — retry muted then unmute
+        DOM.video.muted = true;
+        DOM.video.play().then(() => { DOM.video.muted = false; })
+                        .catch(() => { if (!fromInit) showControls(); });
       });
 
     } else if (info.type === 'youtube') {
@@ -2658,10 +2665,15 @@
      INIT
   ═══════════════════════════════════════════════════════ */
   function init() {
-    // Restore only About text (playlist resets on reload by design)
-    try { State.aboutText = localStorage.getItem(Storage.KEY_ABOUT) || ''; } catch { State.aboutText = ''; }
+    Storage.load();
     $('about-text').value = State.aboutText;
     renderAboutDisplay();
+
+    // Restore intro fields from saved state
+    if (State.introVideo) {
+      CRE.introUrl.value   = State.introVideo.url   || '';
+      CRE.introTitle.value = State.introVideo.title || '';
+    }
 
     hideControls();                                 // controls OFF by default
     DOM.tabBar.classList.add('tab-bar--hidden');    // tab bar hidden on Home
@@ -2817,7 +2829,7 @@
         break;
       case 'ArrowLeft':
         e.preventDefault();
-        playPrev();
+        { const prev = State.currentIndex - 1; if (prev >= 0) loadVideo(prev); else AP.seek(0); }
         break;
       case 'ArrowUp':
         e.preventDefault();

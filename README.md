@@ -1,6 +1,13 @@
 03.17.26
 # VideoApp - v1 - vers-B
 
+ADDS vers-B:
+  - Persistent Playlist & About Text
+  - Player Cyan 
+  - Audio Slider & Mute Adjustments
+
+
+
 A production-ready, single-file mobile video player PWA. No build tools, no dependencies — open the HTML file in any browser and go.
 
 ---
