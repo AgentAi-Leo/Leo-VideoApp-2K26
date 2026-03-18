@@ -9,7 +9,10 @@ ADDS vers-B:
   - Added Loopable Keybinding to Playlist
   - Added Toggle to LOOP PLAYLIST
   - Move Menu to TOP od Screen
-  
+  - Video Playback Buttons Larger & Darker Color Cyan
+  - NO 13s
+  - 
+
 
 
 A production-ready, single-file mobile video player PWA. No build tools, no dependencies — open the HTML file in any browser and go.
