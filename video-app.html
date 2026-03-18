@@ -250,14 +250,18 @@
 
     #title-overlay-text   { display: block; font-size: 27px; font-weight: 700; white-space: pre-line; }
     #title-overlay-creator {
-      display: block;
-      text-align: left;
       font-size: 1rem;
       font-weight: 600;
       letter-spacing: 0.01em;
-      margin-top: 4px;
     }
     #title-overlay-creator:empty { display: none; }
+    .overlay-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+    .overlay-meta-row:not(:has(> :not(:empty))) { display: none; }
 
     /* ═══════════════════════════════════════════════════
        CONTROLS OVERLAY
@@ -312,7 +316,6 @@
       font-weight: 600;
       color: #fff;
       letter-spacing: 0.01em;
-      margin-top: 4px;
     }
     .controls-creator:empty { display: none; }
 
@@ -1241,7 +1244,10 @@
         <!-- Title overlay — fades out after 5s -->
         <div id="title-overlay" class="title-overlay" aria-live="polite">
           <span id="title-overlay-text"></span>
-          <span id="title-overlay-creator"></span>
+          <span class="overlay-meta-row">
+            <span id="title-overlay-creator"></span>
+            <span id="title-overlay-tag"></span>
+          </span>
         </div>
 
         <!-- Tap target: captures taps when controls are hidden -->
@@ -1254,7 +1260,10 @@
           <div class="controls-top">
             <div class="controls-title-group">
               <span id="controls-title" class="controls-title"></span>
-              <span id="controls-creator" class="controls-creator"></span>
+              <span class="overlay-meta-row">
+                <span id="controls-creator" class="controls-creator"></span>
+                <span id="controls-tag"></span>
+              </span>
             </div>
             <button id="btn-fullscreen" class="ctrl-btn ctrl-btn--icon" aria-label="Toggle fullscreen" title="Fullscreen">
               <svg id="icon-fs-enter" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -1682,7 +1691,9 @@
     titleOverlay:     $('title-overlay'),
     titleText:        $('title-overlay-text'),
     titleCreator:     $('title-overlay-creator'),
+    titleTag:         $('title-overlay-tag'),
     controlsCreator:  $('controls-creator'),
+    controlsTag:      $('controls-tag'),
     controlsOverlay:  $('controls-overlay'),
     controlsTitle:    $('controls-title'),
     emptyState:       $('empty-state'),
@@ -2252,6 +2263,8 @@
     DOM.controlsTitle.textContent   = displayTitle;
     DOM.titleCreator.textContent    = item.creator || '';
     DOM.controlsCreator.textContent = item.creator || '';
+    DOM.titleTag.innerHTML          = platformTag(item.url);
+    DOM.controlsTag.innerHTML       = platformTag(item.url);
     showTitleOverlay(true); // force-show even if controls visible
     // Fetch creator if not yet cached, then update display if still current item
     if (!item.creator) {
@@ -3082,7 +3095,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v53';
+      const CACHE = 'vapp-v54';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
