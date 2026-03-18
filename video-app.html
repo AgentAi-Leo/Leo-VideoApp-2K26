@@ -2032,7 +2032,6 @@
       vmMsg('getDuration');
     } else if (evt === 'play') {
       onPlayerPlay();
-      if (!AP._vmFromInit) showControls();
       AP._vmFromInit = false;
     } else if (evt === 'pause') {
       onPlayerPause();
@@ -2095,7 +2094,6 @@
                 if (item) e.target.setPlaybackRate(State.videoSpeeds[item.url] || 1); }
               onPlayerPlay();
               startProgressPolling();
-              if (!fromInit) showControls();
               fromInit = false; // subsequent plays are user-initiated
               break;
             case YT.PlayerState.PAUSED:
@@ -2211,9 +2209,7 @@
       DOM.video.play().then(() => {
         DOM.video.muted = false;
         DOM.video.playbackRate = savedRate; // re-apply after play (some browsers reset it)
-      }).catch(() => {
-        if (!fromInit) showControls();
-      });
+      }).catch(() => {});
 
     } else if (info.type === 'youtube') {
       showPlayerType('youtube');
@@ -2443,6 +2439,9 @@
       toggleControls();
     }
   }, { passive: true });
+
+  // Desktop hover → show controls
+  $('panel-home').addEventListener('mousemove', () => { if (AP.type) showControls(); });
 
   // Desktop click on tap-target
   DOM.playerTapTarget.addEventListener('click', toggleControls);
@@ -2963,7 +2962,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v29';
+      const CACHE = 'vapp-v30';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
