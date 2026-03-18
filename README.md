@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-C
+# VideoApp - v1 - vers-D
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -14,7 +14,7 @@ ADDS vers-B:
 
 ADDS vers-C:
   - Adding Option: 1: Of BLK Between Video Playback
-  - x
+  - ???x
 
 ===================================================
 
