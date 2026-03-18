@@ -2281,7 +2281,7 @@
   /* ═══════════════════════════════════════════════════════
      CONTROLS VISIBILITY
   ═══════════════════════════════════════════════════════ */
-  const CONTROLS_HIDE_DELAY = 3000;
+  const CONTROLS_HIDE_DELAY = 750;
 
   function showControls(autoHide = true) {
     State.controlsVisible = true;
@@ -2952,7 +2952,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v32';
+      const CACHE = 'vapp-v33';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
