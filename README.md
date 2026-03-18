@@ -5,7 +5,7 @@ A production-ready, single-file mobile video player PWA. No build tools, no depe
 
 ---
 
-## Features
+## Features:
 
 ### Playback
 - Supports **YouTube**, **Vimeo**, and direct video files (`.mp4`, `.webm`)
