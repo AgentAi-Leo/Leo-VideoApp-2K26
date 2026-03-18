@@ -1304,8 +1304,6 @@
                 <button class="speed-btn" data-rate="1.25">1.25×</button>
                 <button class="speed-btn" data-rate="1.5">1.5×</button>
                 <button class="speed-btn" data-rate="2">2×</button>
-                <button class="speed-btn" data-rate="2.5">2.5×</button>
-                <button class="speed-btn" data-rate="3">3×</button>
               </div>
             </div>
 
@@ -2189,8 +2187,11 @@
     syncProgressBar(0, 0, null);
     DOM.timeDuration.textContent = '0:00';
 
-    // Apply saved speed for this video, update button UI
-    const savedRate = State.videoSpeeds[item.url] || 1;
+    // Apply saved speed — validate against available buttons, default to 1x if unrecognised
+    const validRates = Array.from(DOM.speedScroll.querySelectorAll('.speed-btn'))
+                            .map(b => parseFloat(b.dataset.rate));
+    const raw = State.videoSpeeds[item.url];
+    const savedRate = (raw && validRates.includes(raw)) ? raw : 1;
     DOM.speedScroll.querySelectorAll('.speed-btn').forEach(b => {
       b.classList.toggle('speed-btn--active', parseFloat(b.dataset.rate) === savedRate);
     });
@@ -2236,12 +2237,19 @@
   // Show 1s black screen between videos when blackGap is enabled
   const blackOverlay = document.getElementById('black-overlay');
   let gapActive = false;
+  let gapTimer  = null;
+  function cancelGap() {
+    if (gapTimer) { clearTimeout(gapTimer); gapTimer = null; }
+    gapActive = false;
+    blackOverlay.classList.remove('visible');
+  }
   function withBlackGap(fn) {
     if (!State.blackGap) { fn(); return; }
     gapActive = true;
     AP.destroy();
     blackOverlay.classList.add('visible');
-    setTimeout(() => {
+    gapTimer = setTimeout(() => {
+      gapTimer = null;
       blackOverlay.classList.remove('visible');
       gapActive = false;
       fn();
@@ -2670,6 +2678,7 @@
 
   function clearPlaylist() {
     if (State.playlist.length === 0 && !State.introVideo) return;
+    cancelGap();
     AP.destroy();
     showPlayerType('native');
     State.playlist   = [];
@@ -2813,6 +2822,7 @@
   $('btn-preview').addEventListener('click', () => {
     const queue = buildQueue();
     if (queue.length === 0) { showToast('Add videos first'); return; }
+    cancelGap(); // cancel any pending transition before restarting
     switchTab('home');
     loadVideo(0, false); // user-initiated → will show controls on start
   });
@@ -2953,7 +2963,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v25';
+      const CACHE = 'vapp-v26';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
