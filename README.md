@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-E
+# VideoApp - v1 - vers-F
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -21,7 +21,8 @@ ADDS vers-E
   - SEXY AF NOW!
 
 ADDS vers-F
-  - TBD
+  - Added Full-Screen Toggle To Video Player
+  - Can't Remove YouTube Meta Data (Share/Watch Later)
 
 
 ===================================================
