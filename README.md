@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-A
+# VideoApp - v1 - vers-B
 
 A production-ready, single-file mobile video player PWA. No build tools, no dependencies — open the HTML file in any browser and go.
 
