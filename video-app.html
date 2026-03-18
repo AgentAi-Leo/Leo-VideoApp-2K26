@@ -197,18 +197,8 @@
        BUFFERING OVERLAY
     ═══════════════════════════════════════════════════ */
     .buffering-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-      opacity: 0;
-      z-index: 2;
-      transition: opacity var(--t-med);
+      display: none !important;
     }
-
-    .buffering-overlay.visible { opacity: 1; }
 
     /* ═══════════════════════════════════════════════════
        BLACK GAP OVERLAY
@@ -1967,7 +1957,7 @@
   }
 
   function onPlayerBuffering() {
-    DOM.bufferingOverlay.classList.add('visible');
+    // buffering spinner suppressed — keep playback area clean
   }
 
   function onPlayerCanPlay() {
@@ -2962,7 +2952,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v30';
+      const CACHE = 'vapp-v32';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
