@@ -1232,8 +1232,7 @@
 
             <button id="btn-next" class="ctrl-btn ctrl-btn--icon ctrl-btn--lg" aria-label="Next video">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path d="M6 18l8.5-6L6 6v12zm2.5-6l5.5 4-5.5 4V6l5.5 4-5.5 4z"/>
-                <path d="M16 6h2v12h-2z"/>
+                <path d="M6 6v12l8.5-6z M16 6h2v12h-2z"/>
               </svg>
             </button>
           </div>
@@ -2874,7 +2873,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v10';
+      const CACHE = 'vapp-v11';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
