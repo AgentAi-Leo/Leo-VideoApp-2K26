@@ -210,6 +210,20 @@
 
     .buffering-overlay.visible { opacity: 1; }
 
+    /* ═══════════════════════════════════════════════════
+       BLACK GAP OVERLAY
+    ═══════════════════════════════════════════════════ */
+    #black-overlay {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      z-index: 10;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s;
+    }
+    #black-overlay.visible { opacity: 1; pointer-events: auto; }
+
     .spinner {
       width: 44px;
       height: 44px;
@@ -1184,6 +1198,9 @@
           aria-hidden="true"
         ></iframe>
 
+        <!-- Black gap overlay — 1s black between videos -->
+        <div id="black-overlay" aria-hidden="true"></div>
+
         <!-- Buffering / loading spinner overlay -->
         <div id="buffering-overlay" class="buffering-overlay" aria-hidden="true">
           <div class="spinner" role="status" aria-label="Loading video"></div>
@@ -1393,7 +1410,13 @@
                 autocomplete="off"
               />
             </div>
-            <button id="btn-add-video" class="btn btn--primary">Add to Playlist</button>
+            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:0">
+              <button id="btn-add-video" class="btn btn--primary">Add to Playlist</button>
+              <label id="black-gap-label" style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:0.82rem;color:var(--text-2);user-select:none">
+                <input type="checkbox" id="chk-black-gap" style="width:16px;height:16px;accent-color:#00e5ff;cursor:pointer" />
+                1s black between videos
+              </label>
+            </div>
           </div>
 
           <!-- Playlist List -->
@@ -1564,6 +1587,7 @@
     currentIndex:    -1,          // index into full queue (intro=0, then playlist)
     loop:            false,       // loop playlist when it ends
     videoSpeeds:     {},          // { url: rate } — per-video playback speed
+    blackGap:        false,       // insert 1s black screen between videos
     isPlaying:       false,
     controlsVisible: false,       // starts OFF per spec
     controlsTimer:   null,        // auto-hide timeout id
@@ -1581,6 +1605,7 @@
     KEY_ABOUT:    'vapp_about',
     KEY_LOOP:     'vapp_loop',
     KEY_SPEEDS:   'vapp_speeds',
+    KEY_BLACKGAP: 'vapp_blackgap',
 
     load() {
       try {
@@ -1589,7 +1614,8 @@
         State.aboutText   = localStorage.getItem(this.KEY_ABOUT) || '';
         State.loop        = localStorage.getItem(this.KEY_LOOP) === 'true';
         State.videoSpeeds = JSON.parse(localStorage.getItem(this.KEY_SPEEDS) || '{}');
-      } catch { State.playlist = []; State.introVideo = null; State.aboutText = ''; State.loop = false; State.videoSpeeds = {}; }
+        State.blackGap    = localStorage.getItem(this.KEY_BLACKGAP) === 'true';
+      } catch { State.playlist = []; State.introVideo = null; State.aboutText = ''; State.loop = false; State.videoSpeeds = {}; State.blackGap = false; }
     },
 
     save() {
@@ -1598,6 +1624,7 @@
       localStorage.setItem(this.KEY_ABOUT,    State.aboutText);
       localStorage.setItem(this.KEY_LOOP,     State.loop);
       localStorage.setItem(this.KEY_SPEEDS,   JSON.stringify(State.videoSpeeds));
+      localStorage.setItem(this.KEY_BLACKGAP, State.blackGap);
     },
   };
 
@@ -2204,13 +2231,25 @@
   // First playlist index — 1 if intro exists, else 0
   function firstPlaylistIdx() { return State.introVideo?.url ? 1 : 0; }
 
+  // Show 1s black screen between videos when blackGap is enabled
+  const blackOverlay = document.getElementById('black-overlay');
+  function withBlackGap(fn) {
+    if (!State.blackGap) { fn(); return; }
+    AP.destroy();
+    blackOverlay.classList.add('visible');
+    setTimeout(() => {
+      blackOverlay.classList.remove('visible');
+      fn();
+    }, 1000);
+  }
+
   function playNext() {
     const queue = buildQueue();
     const next  = State.currentIndex + 1;
     if (next < queue.length) {
-      loadVideo(next);
+      withBlackGap(() => loadVideo(next));
     } else if (State.loop) {
-      loadVideo(firstPlaylistIdx()); // loop skips intro
+      withBlackGap(() => loadVideo(firstPlaylistIdx())); // loop skips intro
     } else {
       State.isPlaying = false;
       updatePlayPauseIcon(false);
@@ -2797,6 +2836,14 @@
   $('btn-clear-all').addEventListener('click', clearAll);
   $('btn-clear-all-about').addEventListener('click', clearAll);
 
+  // BLACK GAP checkbox
+  const chkBlackGap = $('chk-black-gap');
+  chkBlackGap.checked = State.blackGap;
+  chkBlackGap.addEventListener('change', () => {
+    State.blackGap = chkBlackGap.checked;
+    Storage.save();
+  });
+
   // LOOP toggle
   const btnLoop = $('btn-loop-toggle');
   function updateLoopBtn() {
@@ -2901,7 +2948,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v20';
+      const CACHE = 'vapp-v21';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
