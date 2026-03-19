@@ -1954,9 +1954,6 @@
         window.removeEventListener('message', handleVimeoMessage);
         try { DOM.vmPlayer.src = 'about:blank'; } catch {}
       }
-      if (this.type === 'drive') {
-        try { DOM.drivePlayer.src = 'about:blank'; } catch {}
-      }
       this.type = null;
       this._duration = 0;
       this._currentTime = 0;
@@ -2396,11 +2393,18 @@
       }).catch(() => {});
 
     } else if (info.type === 'drive') {
-      showPlayerType('drive');
-      DOM.drivePlayer.src = `https://drive.google.com/file/d/${info.id}/preview?autoplay=true`;
-      State.isPlaying = true;
-      updatePlayPauseIcon(true);
-      showControls(); // Drive has no play-event callback — show controls immediately
+      // Stream directly through native <video> — full play/pause/seek control
+      AP.type = 'native';
+      showPlayerType('native');
+      DOM.video.muted  = true;
+      DOM.video.volume = parseFloat(DOM.volumeSlider.value);
+      DOM.video.playbackRate = savedRate;
+      DOM.video.src = `https://drive.google.com/uc?id=${info.id}&export=download`;
+      DOM.video.load();
+      DOM.video.play().then(() => {
+        DOM.video.muted = false;
+        DOM.video.playbackRate = savedRate;
+      }).catch(() => {});
     }
   }
 
@@ -3174,7 +3178,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v58';
+      const CACHE = 'vapp-v59';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
