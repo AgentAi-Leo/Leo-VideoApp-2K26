@@ -1932,7 +1932,7 @@
      Unified API for native video, YouTube, and Vimeo.
   ═══════════════════════════════════════════════════════ */
   const AP = {
-    type: null,    // 'native' | 'youtube' | 'vimeo'
+    type: null,    // 'native' | 'youtube' | 'vimeo' | 'drive'
     yt:   null,    // YT.Player instance (YouTube only)
 
     // Cached values for YouTube/Vimeo (sync reads)
@@ -1940,6 +1940,7 @@
     _currentTime: 0,
     _vmFromInit:  false,
     _mutedFlag:   false,
+    _driveUrl:    '',  // stored Drive preview URL for play-button reload
 
     destroy() {
       stopProgressPolling();
@@ -1954,16 +1955,25 @@
         window.removeEventListener('message', handleVimeoMessage);
         try { DOM.vmPlayer.src = 'about:blank'; } catch {}
       }
+      if (this.type === 'drive') {
+        try { DOM.drivePlayer.src = 'about:blank'; } catch {}
+      }
       this.type = null;
       this._duration = 0;
       this._currentTime = 0;
       this._mutedFlag = false;
+      this._driveUrl  = '';
     },
 
     play() {
       if (this.type === 'native')  return DOM.video.play().catch(() => {});
       if (this.type === 'youtube') { if (this.yt) this.yt.playVideo(); }
       if (this.type === 'vimeo')   vmMsg('play');
+      if (this.type === 'drive' && this._driveUrl) {
+        // Reload iframe within user-gesture context → browser allows autoplay
+        DOM.drivePlayer.src = '';
+        DOM.drivePlayer.src = this._driveUrl;
+      }
     },
 
     pause() {
@@ -2393,13 +2403,13 @@
       }).catch(() => {});
 
     } else if (info.type === 'drive') {
-      // Stream directly through native <video> — full play/pause/seek control
+      // Drive: stream via native <video> using usercontent domain (bypasses large-file confirmation)
       AP.type = 'native';
       showPlayerType('native');
       DOM.video.muted  = true;
       DOM.video.volume = parseFloat(DOM.volumeSlider.value);
       DOM.video.playbackRate = savedRate;
-      DOM.video.src = `https://drive.google.com/uc?id=${info.id}&export=download`;
+      DOM.video.src = `https://drive.usercontent.google.com/download?id=${info.id}&export=download&authuser=0&confirm=t`;
       DOM.video.load();
       DOM.video.play().then(() => {
         DOM.video.muted = false;
@@ -3178,7 +3188,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v59';
+      const CACHE = 'vapp-v62';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
