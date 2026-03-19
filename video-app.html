@@ -2024,8 +2024,6 @@
     DOM.ytPlayerDiv.style.display  = type === 'youtube' ? 'block' : 'none';
     DOM.vmPlayer.style.display     = type === 'vimeo'   ? 'block' : 'none';
     DOM.drivePlayer.style.display  = type === 'drive'   ? 'block' : 'none';
-    // Drive iframe needs direct interaction — tap target would block it
-    DOM.playerTapTarget.style.pointerEvents = type === 'drive' ? 'none' : '';
   }
 
   /* ═══════════════════════════════════════════════════════
@@ -2399,7 +2397,7 @@
 
     } else if (info.type === 'drive') {
       showPlayerType('drive');
-      DOM.drivePlayer.src = `https://drive.google.com/file/d/${info.id}/preview`;
+      DOM.drivePlayer.src = `https://drive.google.com/file/d/${info.id}/preview?autoplay=true`;
       State.isPlaying = true;
       updatePlayPauseIcon(true);
     }
@@ -3175,7 +3173,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v56';
+      const CACHE = 'vapp-v57';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))
