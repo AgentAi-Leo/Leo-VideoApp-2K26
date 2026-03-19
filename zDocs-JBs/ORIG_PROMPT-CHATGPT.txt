@@ -1,0 +1,202 @@
+You are a top 1% senior frontend engineer.
+
+IMPORTANT EXECUTION RULES (CRITICAL):
+
+- You MUST break this task into multiple steps internally
+- You MUST NOT output the entire solution at once
+- Each response MUST stay under 8000 tokens
+- After completing a step, STOP and wait for "continue"
+- Clearly label each step (Step 1, Step 2, etc.)
+- Never skip steps
+- Never combine multiple major steps into one response
+
+If the solution is large:
+- Divide into logical sections (HTML, CSS, JS, Features, Enhancements)
+- Output ONLY ONE section per response
+
+---
+
+GOAL:
+Build a production-ready full-screen mobile-first video web app using:
+- HTML
+- CSS
+- Vanilla JavaScript
+
+---
+
+EXECUTION PLAN:
+
+Step 1: HTML structure  
+Step 2: Base CSS layout (fullscreen, mobile-first)  
+Step 3: Video player core logic  
+Step 4: Custom controls (play, pause, volume, speed, share)  
+Step 5: Playlist system (localStorage)  
+Step 6: CREATE tab functionality  
+Step 7: ABOUT tab  
+Step 8: UI polish (animations, overlays, fade effects)  
+Step 9: Performance optimization  
+
+---
+
+OUTPUT RULES:
+
+- Output ONLY the current step
+- Do NOT include future steps
+- Code must be complete and runnable for that step
+- Clearly comment code
+- Keep responses efficient (avoid unnecessary verbosity)
+
+---
+
+APP REQUIREMENTS:
+
+GOAL:
+Build a production-ready, full-screen, mobile-optimized Progressive Web App (PWA) for video playback using ONLY:
+- HTML
+- CSS
+- Vanilla JavaScript (no frameworks)
+
+This is a performance-critical, video-first application. Avoid unnecessary abstractions.
+
+---
+
+CORE ARCHITECTURE:
+
+- Single Page Application (SPA behavior, no reloads)
+- Mobile-first responsive design
+- Fullscreen-first UX (app feels like a native app)
+- Use modular, clean, maintainable JavaScript
+
+---
+
+TABS / NAVIGATION:
+
+1. HOME (Video Player)
+2. CREATE (Playlist Builder)
+3. ABOUT (Static Page)
+
+Tab switching must be instant with no reload.
+
+---
+
+VIDEO PLAYER (HOME):
+
+- Use native HTML5 <video> element
+- Default: FULLSCREEN layout with controls overlay
+- Autoplay behavior:
+  1. Play user-defined "INTRO VIDEO"
+  2. Then play user playlist sequentially
+
+- Show video title overlay:
+  - Appears when video starts
+  - Smooth fade-out after 5 seconds
+- Default state of full-screen video player control on page loads is set to OFF
+
+---
+
+PLAYER CONTROLS (CUSTOM UI OVERLAY):
+
+Include:
+- Play / Pause toggle
+- Seekable progress bar
+- Current time / duration
+- Volume slider
+- Mute toggle (single tap)
+- Playback speed control (0.5x–2x)
+- Share button:
+  - Copies current video URL to clipboard
+  - Show confirmation UI (toast)
+
+---
+
+PLAYLIST SYSTEM:
+
+- User-defined playlist stored in localStorage
+- Sequential autoplay
+- Handles:
+  - Invalid URLs (skip gracefully)
+  - Playback errors
+
+---
+
+CREATE TAB:
+
+- Input fields:
+  - Video URL
+  - Video Title (Option to create new or use/scrape existing from URL Source(e.g. Youtube or Vimeo)
+- Button: Add to playlist
+
+- Features:
+  - Remove video
+  - Reorder playlist (drag-and-drop preferred, fallback buttons OK)
+  - Set "INTRO VIDEO" separately
+
+- Show full playlist UI
+
+---
+
+ABOUT TAB:
+
+Render EXACTLY this HTML:
+<h1> ABOUT<h1>
+<h3>"This is he ABOUT Section... add story here"<h3>
+
+---
+
+UX / UI REQUIREMENTS:
+
+- Dark, premium design
+- Smooth animations (CSS only, no heavy libraries)
+- Glassmorphism + subtle glow effects
+- Touch-friendly UI (large tap targets)
+- Fast transitions (no lag)
+
+---
+
+VIDEO PERFORMANCE:
+
+- Optimize for mobile playback
+- Use efficient event handling
+- Avoid unnecessary re-renders
+- Ensure smooth playback on low-end devices
+
+---
+
+BONUS FEATURES (if possible):
+
+- Swipe gestures (next/previous video)
+- Loading spinner while buffering
+- PWA support (manifest + installable)
+- Offline fallback UI
+
+---
+
+OUTPUT:
+
+- Provide FULL working code in ONE HTML file
+- Separate sections:
+  - <style> for CSS
+  - <script> for JS
+- Code must be clean, modular, and commented
+- No placeholders — fully functional app
+
+---
+
+IMPORTANT:
+
+Prioritize:
+1. Performance
+2. Smooth UX
+3. Clean architecture
+
+Avoid:
+- Overengineering
+- Frameworks
+- Unnecessary dependencies
+
+---
+
+START WITH:
+Step 1: HTML structure only
+
+Then STOP and wait for user input.

@@ -158,8 +158,7 @@
        YOUTUBE / VIMEO IFRAME CONTAINERS
     ═══════════════════════════════════════════════════ */
     #yt-player,
-    #vm-player,
-    #drive-player {
+    #vm-player {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -177,10 +176,55 @@
       pointer-events: none; /* prevent YouTube hover/pause overlays */
     }
 
-    /* Vimeo / Google Drive use pre-existing <iframe> elements */
-    #vm-player,
-    #drive-player {
+    /* Vimeo uses pre-existing <iframe> element */
+    #vm-player {
       border: none;
+    }
+
+    /* ═══════════════════════════════════════════════════
+       DRIVE FULLSCREEN OVERLAY
+       Covers the entire app so Drive's native player
+       handles all interaction. Shown/hidden by JS.
+    ═══════════════════════════════════════════════════ */
+    #drive-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      background: #000;
+    }
+    #drive-overlay.drive-overlay--active {
+      display: block;
+    }
+    #drive-overlay #drive-player {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    #drive-overlay-back {
+      position: absolute;
+      top: max(12px, env(safe-area-inset-top, 12px));
+      left: 12px;
+      z-index: 9001;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 20px;
+      padding: 8px 16px 8px 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: background var(--t-fast);
+    }
+    #drive-overlay-back:active {
+      background: rgba(255, 255, 255, 0.15);
     }
 
     /* ═══════════════════════════════════════════════════
@@ -1237,14 +1281,6 @@
           aria-hidden="true"
         ></iframe>
 
-        <!-- Google Drive player iframe -->
-        <iframe
-          id="drive-player"
-          allow="autoplay; fullscreen"
-          allowfullscreen
-          aria-hidden="true"
-        ></iframe>
-
         <!-- Black gap overlay — 1s black between videos -->
         <div id="black-overlay" aria-hidden="true"></div>
 
@@ -1374,6 +1410,22 @@
 
           </div><!-- /controls-bottom -->
         </div><!-- /controls-overlay -->
+
+        <!-- ═══════════════════════════════════════════════════
+             DRIVE EXTERNAL UI
+             Shown when third-party cookies or virus scans block Drive videos natively.
+        ═══════════════════════════════════════════════════ -->
+        <div id="drive-external-ui" class="empty-state" style="display: none; z-index: 6;">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.8;">
+            <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+          </svg>
+          <p>Google Drive Video</p>
+          <p class="empty-hint" style="max-width: 320px; line-height: 1.5; margin: 12px auto 24px;">Due to strict browser security and cookie settings preventing smooth in-app playback, this video must be opened externally.</p>
+          <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="btn-open-drive" class="btn btn--preview" style="padding: 12px 24px; font-size: 1.1rem; border-radius: 8px;">OPEN IN NEW TAB</button>
+            <button id="btn-drive-next" class="btn" style="padding: 12px 24px; font-size: 1.1rem; border-radius: 8px;">NEXT VIDEO ⏭</button>
+          </div>
+        </div>
 
         <!-- Empty state — shown when no video loaded -->
         <div id="empty-state" class="empty-state">
@@ -1635,6 +1687,26 @@
   </div>
   <!-- /app -->
 
+  <!-- ═══════════════════════════════════════════
+       DRIVE FULLSCREEN OVERLAY
+       Covers the entire app — Drive's native player
+       handles all controls. Back button returns to app.
+  ═══════════════════════════════════════════ -->
+  <div id="drive-overlay" role="dialog" aria-modal="true" aria-label="Google Drive Video Player">
+    <iframe
+      id="drive-player"
+      allow="autoplay; fullscreen"
+      aria-label="Google Drive video player"
+      style="border:none;"
+    ></iframe>
+    <button id="drive-overlay-back" aria-label="Back to app">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18" aria-hidden="true">
+        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+      </svg>
+      Back
+    </button>
+  </div>
+
   <script>
   'use strict';
 
@@ -1699,6 +1771,7 @@
     ytPlayerDiv:      $('yt-player'),
     vmPlayer:         $('vm-player'),
     drivePlayer:      $('drive-player'),
+    driveOverlay:     $('drive-overlay'),
     playerTapTarget:  $('player-tap-target'),
     bufferingOverlay: $('buffering-overlay'),
     titleOverlay:     $('title-overlay'),
@@ -1821,13 +1894,16 @@
         const u = new URL(url);
         u.hostname = 'dl.dropboxusercontent.com';
         u.searchParams.delete('dl');
+        u.searchParams.set('raw', '1');
         return { type: 'dropbox', url: u.toString() };
       } catch { /* fall through to native */ }
     }
 
     // Google Drive: drive.google.com/file/d/FILE_ID/...
     m = url.match(/drive\.google\.com\/file\/d\/([^/?#]+)/);
-    if (m) return { type: 'drive', id: m[1] };
+    if (m) {
+      return { type: 'drive', id: m[1] };
+    }
 
     // Native video file / stream
     return { type: 'native', url };
@@ -1940,7 +2016,7 @@
     _currentTime: 0,
     _vmFromInit:  false,
     _mutedFlag:   false,
-    _driveUrl:    '',  // stored Drive preview URL for play-button reload
+    _driveId: '',  // Google Drive file ID (used by showDriveOverlay)
 
     destroy() {
       stopProgressPolling();
@@ -1956,24 +2032,19 @@
         try { DOM.vmPlayer.src = 'about:blank'; } catch {}
       }
       if (this.type === 'drive') {
-        try { DOM.drivePlayer.src = 'about:blank'; } catch {}
+        hideDriveExternalUi();
       }
       this.type = null;
       this._duration = 0;
       this._currentTime = 0;
       this._mutedFlag = false;
-      this._driveUrl  = '';
+      this._driveId = '';
     },
 
     play() {
       if (this.type === 'native')  return DOM.video.play().catch(() => {});
       if (this.type === 'youtube') { if (this.yt) this.yt.playVideo(); }
       if (this.type === 'vimeo')   vmMsg('play');
-      if (this.type === 'drive' && this._driveUrl) {
-        // Reload iframe within user-gesture context → browser allows autoplay
-        DOM.drivePlayer.src = '';
-        DOM.drivePlayer.src = this._driveUrl;
-      }
     },
 
     pause() {
@@ -2030,8 +2101,58 @@
     DOM.video.style.display        = type === 'native'  ? 'block' : 'none';
     DOM.ytPlayerDiv.style.display  = type === 'youtube' ? 'block' : 'none';
     DOM.vmPlayer.style.display     = type === 'vimeo'   ? 'block' : 'none';
-    DOM.drivePlayer.style.display  = type === 'drive'   ? 'block' : 'none';
   }
+
+  /* ═══════════════════════════════════════════════════════
+     DRIVE EXTERNAL UI
+     Opens Drive's player in a new tab to bypass cookie blocks.
+  ═══════════════════════════════════════════════════════ */
+  function showDriveExternalUi(id) {
+    const ui = $('drive-external-ui');
+    if (!ui) return;
+    ui.style.display = 'flex';
+    
+    // Hide native controls clutter
+    const bot = document.querySelector('.controls-bottom');
+    const mid = document.querySelector('.controls-center');
+    if (bot) bot.style.display = 'none';
+    if (mid) mid.style.display = 'none';
+    
+    const btn = $('btn-open-drive');
+    if (btn) {
+      // Re-assign onclick so we don't accumulate listeners
+      btn.onclick = () => {
+        window.open(`https://drive.google.com/file/d/${id}/view`, '_blank');
+      };
+    }
+    
+    const btnNext = $('btn-drive-next');
+    if (btnNext) {
+      btnNext.onclick = () => {
+        hideDriveExternalUi();
+        const queue = buildQueue();
+        const next = State.currentIndex + 1;
+        if (next < queue.length) {
+          withBlackGap(() => loadVideo(next));
+        } else if (State.loop) {
+          withBlackGap(() => loadVideo(firstPlaylistIdx()));
+        } else {
+          AP.destroy();
+          showControls(false);
+        }
+      };
+    }
+  }
+
+  function hideDriveExternalUi() {
+    const ui = $('drive-external-ui');
+    if (ui) ui.style.display = 'none';
+    const bot = document.querySelector('.controls-bottom');
+    const mid = document.querySelector('.controls-center');
+    if (bot) bot.style.display = '';
+    if (mid) mid.style.display = '';
+  }
+
 
   /* ═══════════════════════════════════════════════════════
      PROGRESS POLLING (YouTube only)
@@ -2164,13 +2285,15 @@
       ['play', 'pause', 'finish', 'playProgress', 'bufferstart', 'bufferend', 'error'].forEach(name => {
         vmMsg('addEventListener', name);
       });
-      // Set volume, speed, and get duration
-      const vol = parseFloat(DOM.volumeSlider.value) || 0.5;
-      vmMsg('setVolume', vol);
+      // Set speed and get duration; do NOT set volume here — video starts muted
+      // for autoplay policy. We unmute in the 'play' handler once it's running.
       const queue = buildQueue(); const item = queue[State.currentIndex];
       if (item) vmMsg('setPlaybackRate', State.videoSpeeds[item.url] || 1);
       vmMsg('getDuration');
     } else if (evt === 'play') {
+      // Unmute now that playback has started (autoplay policy safe)
+      const vol = parseFloat(DOM.volumeSlider.value) || 0.5;
+      vmMsg('setVolume', vol);
       onPlayerPlay();
       AP._vmFromInit = false;
     } else if (evt === 'pause') {
@@ -2270,6 +2393,7 @@
 
     const params = new URLSearchParams({
       autoplay: 1,
+      muted:    1,   // required for browser autoplay policy; we unmute on 'play'
       controls: 0,
       title:    0,
       byline:   0,
@@ -2373,7 +2497,10 @@
       DOM.video.play().then(() => {
         DOM.video.muted = false;
         DOM.video.playbackRate = savedRate; // re-apply after play (some browsers reset it)
-      }).catch(() => {});
+      }).catch(() => {
+        DOM.video.muted = false; // unmute so audio plays when user starts manually
+        showControls(false);     // reveal controls so user can tap play
+      });
 
     } else if (info.type === 'youtube') {
       showPlayerType('youtube');
@@ -2395,26 +2522,26 @@
       DOM.video.muted  = true;
       DOM.video.volume = parseFloat(DOM.volumeSlider.value);
       DOM.video.playbackRate = savedRate;
-      DOM.video.src = info.url; // transformed dl.dropboxusercontent.com URL
+      DOM.video.src = info.url; // transformed direct URL
       DOM.video.load();
       DOM.video.play().then(() => {
         DOM.video.muted = false;
         DOM.video.playbackRate = savedRate;
-      }).catch(() => {});
+      }).catch(() => {
+        DOM.video.muted = false;
+        showControls(false);
+      });
 
     } else if (info.type === 'drive') {
-      // Drive: stream via native <video> using usercontent domain (bypasses large-file confirmation)
-      AP.type = 'native';
-      showPlayerType('native');
-      DOM.video.muted  = true;
-      DOM.video.volume = parseFloat(DOM.volumeSlider.value);
-      DOM.video.playbackRate = savedRate;
-      DOM.video.src = `https://drive.usercontent.google.com/download?id=${info.id}&export=download&authuser=0&confirm=t`;
-      DOM.video.load();
-      DOM.video.play().then(() => {
-        DOM.video.muted = false;
-        DOM.video.playbackRate = savedRate;
-      }).catch(() => {});
+      // Drive: falls back to custom UI card explaining browser constraints.
+      AP.type = 'drive';
+      AP._driveId = info.id;
+      
+      // Hides standard players (video, YT, VM)
+      showPlayerType('native'); 
+      updatePlayPauseIcon(false);
+      
+      showDriveExternalUi(info.id); 
     }
   }
 
@@ -3155,6 +3282,9 @@
     const queue = buildQueue();
     if (queue.length > 0) {
       loadVideo(0, true);
+      // If autoplay is blocked by the browser, reveal controls after 2 s
+      // so the user can tap play manually.
+      setTimeout(() => { if (!State.isPlaying) showControls(false); }, 2000);
     }
   }
 
@@ -3188,7 +3318,7 @@
   (function registerSW() {
     if (!('serviceWorker' in navigator)) return;
     const swCode = `
-      const CACHE = 'vapp-v62';
+      const CACHE = 'vapp-v68';
       self.addEventListener('install', e => {
         e.waitUntil(
           caches.open(CACHE).then(c => c.addAll([self.location.href]))

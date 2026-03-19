@@ -30,7 +30,7 @@ ADDS vers-G
   - ALL WORKING AWESOME!!!
 
 ADDS vers-H
-  - Suuport For Google Drive & Dropbox links
+  - Support For Google Drive & Dropbox NOT WORKING!
   - 
 
 
