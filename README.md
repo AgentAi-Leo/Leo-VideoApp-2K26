@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-I
+# VideoApp - v1 - vers-J
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -38,6 +38,8 @@ ADDS vers-I
   - Refined External Video Site Support
   - WORKS GREAT!!!
 
+ADDS vers-J
+  - wwwww
 
 
 
