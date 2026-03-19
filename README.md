@@ -35,7 +35,8 @@ ADDS vers-H
 ADDS vers-I
   - REMOVE Support For Google Drive & Dropbox
   - Maybe Add Back Dropbox Support In Future 
-  - 
+  - Refined External Video Site Support
+  - WORKS GREAT!!!
 
 
 
