@@ -1921,20 +1921,9 @@
 
   async function fetchVideoTitle(url) {
     const info = detectVideoInfo(url.trim());
-    if (info.type === 'native') {
-      try {
-        const u = new URL(url);
-        let filename = u.pathname.split('/').pop();
-        if (!filename) return 'Unknown Video';
-        // Clean up the filename (e.g. video_123.mp4 -> video 123)
-        filename = decodeURIComponent(filename.replace(/\.[^.]+$/, '').replace(/[-_+]/g, ' '));
-        // Capitalize first letter
-        filename = filename.charAt(0).toUpperCase() + filename.slice(1);
-        return filename || 'Unknown Video';
-      } catch { return 'Unknown Video'; }
-    }
+    if (info.type === 'native') return 'Unknown';
     const data = await fetchOembed(url);
-    return data?.title || 'Unknown Video';
+    return data?.title || 'Unknown';
   }
 
   async function fetchVideoCreator(url) {
