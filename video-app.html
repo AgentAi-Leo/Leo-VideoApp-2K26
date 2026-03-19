@@ -1888,23 +1888,6 @@
     m = url.match(/(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)(\d+)/);
     if (m) return { type: 'vimeo', id: m[1] };
 
-    // Dropbox: transform share URL to direct streaming URL
-    if (/(?:www\.)?dropbox\.com\//.test(url)) {
-      try {
-        const u = new URL(url);
-        u.hostname = 'dl.dropboxusercontent.com';
-        u.searchParams.delete('dl');
-        u.searchParams.set('raw', '1');
-        return { type: 'dropbox', url: u.toString() };
-      } catch { /* fall through to native */ }
-    }
-
-    // Google Drive: drive.google.com/file/d/FILE_ID/...
-    m = url.match(/drive\.google\.com\/file\/d\/([^/?#]+)/);
-    if (m) {
-      return { type: 'drive', id: m[1] };
-    }
-
     // Native video file / stream
     return { type: 'native', url };
   }
@@ -1914,10 +1897,8 @@
     const cfg = {
       youtube: ['YouTube', 'youtube'],
       vimeo:   ['Vimeo',   'vimeo'],
-      dropbox: ['Dropbox', 'dropbox'],
-      drive:   ['Drive',   'drive'],
     };
-    const [label, cls] = cfg[type] || ['Other', 'other'];
+    const [label, cls] = cfg[type] || ['OTHER', 'other'];
     return `<span class="platform-tag platform-tag--${cls}">${label}</span>`;
   }
 
@@ -1940,36 +1921,43 @@
 
   async function fetchVideoTitle(url) {
     const info = detectVideoInfo(url.trim());
-    if (info.type === 'dropbox') {
+    if (info.type === 'native') {
       try {
         const u = new URL(url);
-        const filename = u.pathname.split('/').pop();
-        const name = decodeURIComponent(filename.replace(/\.[^.]+$/, '').replace(/[-_+]/g, ' '));
-        return name || 'Dropbox Video';
-      } catch { return 'Dropbox Video'; }
+        let filename = u.pathname.split('/').pop();
+        if (!filename) return 'Unknown Video';
+        // Clean up the filename (e.g. video_123.mp4 -> video 123)
+        filename = decodeURIComponent(filename.replace(/\.[^.]+$/, '').replace(/[-_+]/g, ' '));
+        // Capitalize first letter
+        filename = filename.charAt(0).toUpperCase() + filename.slice(1);
+        return filename || 'Unknown Video';
+      } catch { return 'Unknown Video'; }
     }
-    if (info.type === 'drive') return 'Google Drive Video';
     const data = await fetchOembed(url);
-    return data?.title || null;
+    return data?.title || 'Unknown Video';
   }
 
   async function fetchVideoCreator(url) {
     const info = detectVideoInfo(url.trim());
-    if (info.type === 'native') return null;
-    if (info.type === 'dropbox' || info.type === 'drive') return 'User';
+    if (info.type === 'native') {
+      try {
+        const u = new URL(url);
+        return u.hostname.replace(/^www\./, '');
+      } catch { return 'Unknown'; }
+    }
     try {
       if (info.type === 'vimeo') {
         const res = await fetch(`https://vimeo.com/api/v2/video/${info.id}.json`);
-        if (!res.ok) return null;
+        if (!res.ok) return 'Unknown';
         const data = await res.json();
-        return data[0]?.user_name || null;
+        return data[0]?.user_name || 'Unknown';
       }
       if (info.type === 'youtube') {
         const data = await fetchOembed(url);
-        return data?.author_name || null;
+        return data?.author_name || 'Unknown';
       }
-    } catch { return null; }
-    return null;
+    } catch {}
+    return 'Unknown';
   }
 
   async function autoFillTitle(urlInput, titleInput) {
@@ -2030,9 +2018,6 @@
       if (this.type === 'vimeo') {
         window.removeEventListener('message', handleVimeoMessage);
         try { DOM.vmPlayer.src = 'about:blank'; } catch {}
-      }
-      if (this.type === 'drive') {
-        hideDriveExternalUi();
       }
       this.type = null;
       this._duration = 0;
@@ -2101,56 +2086,6 @@
     DOM.video.style.display        = type === 'native'  ? 'block' : 'none';
     DOM.ytPlayerDiv.style.display  = type === 'youtube' ? 'block' : 'none';
     DOM.vmPlayer.style.display     = type === 'vimeo'   ? 'block' : 'none';
-  }
-
-  /* ═══════════════════════════════════════════════════════
-     DRIVE EXTERNAL UI
-     Opens Drive's player in a new tab to bypass cookie blocks.
-  ═══════════════════════════════════════════════════════ */
-  function showDriveExternalUi(id) {
-    const ui = $('drive-external-ui');
-    if (!ui) return;
-    ui.style.display = 'flex';
-    
-    // Hide native controls clutter
-    const bot = document.querySelector('.controls-bottom');
-    const mid = document.querySelector('.controls-center');
-    if (bot) bot.style.display = 'none';
-    if (mid) mid.style.display = 'none';
-    
-    const btn = $('btn-open-drive');
-    if (btn) {
-      // Re-assign onclick so we don't accumulate listeners
-      btn.onclick = () => {
-        window.open(`https://drive.google.com/file/d/${id}/view`, '_blank');
-      };
-    }
-    
-    const btnNext = $('btn-drive-next');
-    if (btnNext) {
-      btnNext.onclick = () => {
-        hideDriveExternalUi();
-        const queue = buildQueue();
-        const next = State.currentIndex + 1;
-        if (next < queue.length) {
-          withBlackGap(() => loadVideo(next));
-        } else if (State.loop) {
-          withBlackGap(() => loadVideo(firstPlaylistIdx()));
-        } else {
-          AP.destroy();
-          showControls(false);
-        }
-      };
-    }
-  }
-
-  function hideDriveExternalUi() {
-    const ui = $('drive-external-ui');
-    if (ui) ui.style.display = 'none';
-    const bot = document.querySelector('.controls-bottom');
-    const mid = document.querySelector('.controls-center');
-    if (bot) bot.style.display = '';
-    if (mid) mid.style.display = '';
   }
 
 
@@ -2515,33 +2450,6 @@
     } else if (info.type === 'vimeo') {
       showPlayerType('vimeo');
       createVimeoPlayer(info.id, fromInit);
-
-    } else if (info.type === 'dropbox') {
-      AP.type = 'native'; // Dropbox streams through the native <video> element
-      showPlayerType('native');
-      DOM.video.muted  = true;
-      DOM.video.volume = parseFloat(DOM.volumeSlider.value);
-      DOM.video.playbackRate = savedRate;
-      DOM.video.src = info.url; // transformed direct URL
-      DOM.video.load();
-      DOM.video.play().then(() => {
-        DOM.video.muted = false;
-        DOM.video.playbackRate = savedRate;
-      }).catch(() => {
-        DOM.video.muted = false;
-        showControls(false);
-      });
-
-    } else if (info.type === 'drive') {
-      // Drive: falls back to custom UI card explaining browser constraints.
-      AP.type = 'drive';
-      AP._driveId = info.id;
-      
-      // Hides standard players (video, YT, VM)
-      showPlayerType('native'); 
-      updatePlayPauseIcon(false);
-      
-      showDriveExternalUi(info.id); 
     }
   }
 

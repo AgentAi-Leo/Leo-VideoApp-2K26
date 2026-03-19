@@ -33,6 +33,8 @@ ADDS vers-H
   - Support For Google Drive & Dropbox NOT WORKING!
 
 ADDS vers-I
+  - REMOVE Support For Google Drive & Dropbox
+  - Maybe Add Back Dropbox Support In Future 
   - 
 
 
