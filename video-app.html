@@ -3318,29 +3318,37 @@
     if (reverseRafId) { cancelAnimationFrame(reverseRafId); reverseRafId = null; }
   }
 
+  let reverseSpeed = 1.0;
   function startReversePlayback() {
+    if (reverseRafId) {
+      reverseSpeed = Math.min(2.0, reverseSpeed + 0.5);
+      showToast('-' + reverseSpeed + 'x Speed');
+      return;
+    }
     stopReversePlayback();
     AP.pause(); // Stop forward execution
     
     lastReverseTime = performance.now();
-    const speed = 1.0; // 1x reverse speed
+    reverseSpeed = 1.0;
+    let targetTime = AP.currentTime; // Decoupled logical time
 
     function reverseStep(timestamp) {
       const deltaMs = timestamp - lastReverseTime;
       lastReverseTime = timestamp;
       
-      const newTime = AP.currentTime - ((deltaMs / 1000) * speed);
-      if (newTime <= 0) {
+      targetTime -= (deltaMs / 1000) * reverseSpeed;
+      if (targetTime <= 0) {
         stopReversePlayback();
         AP.seek(0);
         return;
       }
       
-      AP.seek(newTime);
+      AP.seek(targetTime);
       reverseRafId = requestAnimationFrame(reverseStep);
     }
     
     reverseRafId = requestAnimationFrame(reverseStep);
+    showToast('-1x Speed');
   }
 
   function increaseSpeedAndPlay() {
