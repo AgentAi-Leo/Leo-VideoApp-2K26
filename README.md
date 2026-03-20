@@ -73,7 +73,7 @@ A production-ready, single-file mobile video player PWA. No build tools, no depe
 ## Features:
 
 ### Playback
-- Supports **YouTube**, **Vimeo**, and direct video files via URLs (`.mp4`, `.webm`)
+- Supports major video sites**YouTube**, **Vimeo**, as well as, direct video files via URLs (`.mp4`, `.webm`)
 - Autoplay with audio on load (muted-then-unmute trick for browser policy compliance)
 - Unified player controls across all three video types
 - Playback speed control, seek bar, volume slider, mute toggle
