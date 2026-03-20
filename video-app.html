@@ -3392,6 +3392,21 @@
           e.preventDefault();
           DOM.btnPlayPause.click();
           break;
+        case 'l':
+          e.preventDefault();
+          stopReversePlayback();
+          if (!State.isPlaying) AP.play();
+          AP.setPlaybackRate(1);
+          DOM.speedScroll.querySelectorAll('.speed-btn').forEach(b => 
+            b.classList.toggle('speed-btn--active', parseFloat(b.dataset.rate) === 1)
+          );
+          {
+            const queue = buildQueue(); const item = queue[State.currentIndex];
+            if (item) { State.videoSpeeds[item.url] = 1; Storage.save(); }
+          }
+          showControls();
+          showToast('1x Speed');
+          break;
       }
       return;
     }

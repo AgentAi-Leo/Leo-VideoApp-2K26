@@ -42,12 +42,13 @@ ADDS vers-J
   - SHIFT + F = Full Screen Mode
   - SHIFT + M = Mute/Unmute
   - L = Play Forward w/Speed Increase Ability
+  - SHIFT L = 1x Playback Speed
   - J = Play Reverse
   - K = Pause
   - , & .  = Frame Advance
   - RIGHT Arrow Key = Next Video
   - LEFT Arrow = Previous Video
-  - REMOVED 1.25X Variable Speed
+  - REMOVED 1.25X Variable Speed Option
 
 
 
