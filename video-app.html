@@ -2890,12 +2890,13 @@
     btnClear:     $('btn-clear-playlist'),
   };
 
-  // Static binding for intro preview tooltips
-  CRE.introPreview.addEventListener('mouseenter', e => {
-    if (State.introVideo?.url) HoverPreview.show(State.introVideo.url, e);
+  // Static binding for intro preview tooltips attached to the input field
+  CRE.introUrl.addEventListener('mouseenter', e => {
+    const url = CRE.introUrl.value.trim();
+    if (url) HoverPreview.show(url, e);
   });
-  CRE.introPreview.addEventListener('mouseleave', () => HoverPreview.hide());
-  CRE.introPreview.addEventListener('mousemove', e => HoverPreview.setPosition(e));
+  CRE.introUrl.addEventListener('mouseleave', () => HoverPreview.hide());
+  CRE.introUrl.addEventListener('mousemove', e => HoverPreview.setPosition(e));
 
   /* ── HTML escape (XSS safety) ── */
   function esc(str) {
