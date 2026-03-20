@@ -48,6 +48,7 @@ ADDS vers-J
   - , & .  = Frame Advance
   - H = Seek Back 10s
   - ; = Seek Forward 10s
+  - Seek Visual Display Added To FWD/REVERSE Skip
   - RIGHT Arrow Key = Next Video
   - LEFT Arrow = Previous Video
   - REMOVED 1.25X Variable Speed Option
