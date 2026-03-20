@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-J
+# VideoApp - v1 - vers-K
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -52,7 +52,9 @@ ADDS vers-J
   - RIGHT Arrow Key = Next Video
   - LEFT Arrow = Previous Video
   - REMOVED 1.25X Variable Speed Option
-  - 
+
+ADDS vers-K
+  -
 
 
 
