@@ -1910,8 +1910,24 @@
       youtube: ['YouTube', 'youtube'],
       vimeo:   ['Vimeo',   'vimeo'],
     };
-    const [label, cls] = cfg[type] || ['OTHER', 'other'];
-    return `<span class="platform-tag platform-tag--${cls}">${label}</span>`;
+    if (cfg[type]) {
+      const [label, cls] = cfg[type];
+      return `<span class="platform-tag platform-tag--${cls}">${label}</span>`;
+    }
+
+    try {
+      let hostname = new URL(url).hostname;
+      let match = hostname.match(/([a-zA-Z0-9-]+)\.[a-zA-Z]{2,10}$/);
+      let domainName = match ? match[1] : hostname.split('.')[0];
+      if (/^(co|com|org|net|gov|edu)$/i.test(domainName)) {
+          let parts = hostname.split('.');
+          domainName = parts.length > 2 ? parts[parts.length - 3] : domainName;
+      }
+      domainName = domainName.toUpperCase().substring(0, 12);
+      return `<span class="platform-tag platform-tag--other">${domainName}</span>`;
+    } catch {
+      return `<span class="platform-tag platform-tag--other">OTHER</span>`;
+    }
   }
 
   /* ═══════════════════════════════════════════════════════
