@@ -47,6 +47,7 @@ ADDS vers-J
   - , & .  = Frame Advance
   - RIGHT Arrow Key = Next Video
   - LEFT Arrow = Previous Video
+  - REMOVED 1.25X Variable Speed
 
 
 
