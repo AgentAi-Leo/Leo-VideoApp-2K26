@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-L
+# VideoApp - v1 - vers-M
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -74,6 +74,9 @@ ADDS vers-L
   - Added   Text: ">>> INTRO VIDEO <<<"
   - ADded   Text: ">>> Add Videos To PLAYLIST <<<"
   - WORKS AWESOME!!!
+
+  ADDS vers-M
+  - 
   
 
 
