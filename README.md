@@ -62,7 +62,7 @@ ADDS vers-K
   - Adding Short Video Previews To Intro Video & Playlist Items
   - Incresaed Size Of Tab Icons
   - Set DEFAULT playback speed to 1x After Selecting "PREVIEW"
-  -
+  - Repositioned "Copied to Clipboard" To Top Center
 
 
 
