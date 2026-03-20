@@ -2974,9 +2974,12 @@
       li.addEventListener('drop',      dndDrop);
       li.addEventListener('dragend',   dndEnd);
 
-      li.addEventListener('mouseenter', e => HoverPreview.show(item.url, e));
-      li.addEventListener('mouseleave', () => HoverPreview.hide());
-      li.addEventListener('mousemove',  e => HoverPreview.setPosition(e));
+      const urlSpan = li.querySelector('.playlist-item__url');
+      if (urlSpan) {
+        urlSpan.addEventListener('mouseenter', e => HoverPreview.show(item.url, e));
+        urlSpan.addEventListener('mouseleave', () => HoverPreview.hide());
+        urlSpan.addEventListener('mousemove',  e => HoverPreview.setPosition(e));
+      }
 
       li.querySelector('.playlist-item__drag')
         .addEventListener('touchstart', touchDragStart, { passive: true });
