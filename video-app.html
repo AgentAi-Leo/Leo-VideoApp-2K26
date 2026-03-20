@@ -936,13 +936,13 @@
     }
 
     .playlist-item__remove {
-      color: #ff0000;
+      color: #fff;
       opacity: 0.6;
       flex-shrink: 0;
-      transition: opacity var(--t-fast);
+      transition: opacity var(--t-fast), color var(--t-fast);
     }
 
-    .playlist-item__remove:hover { opacity: 1; }
+    .playlist-item__remove:hover { color: #ff0000; opacity: 1; }
     .playlist-item__remove svg   { width: 18px; height: 18px; }
 
     .playlist-empty {

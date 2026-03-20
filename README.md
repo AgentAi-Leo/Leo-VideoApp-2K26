@@ -58,6 +58,7 @@ ADDS vers-K
   - Updated Tags To Show Domain Name Instead Of "OTHER"
   - Reducing Double TITLE Displays & Smoothed Out Fades For Cleaner Fade-Ins
   - Updared PLAYLIST Delete X Icons to Really Red!
+  - Brightened PLAYLIST Drag Icons  
 
 
 
