@@ -73,7 +73,7 @@ ADDS vers-L
   - Added   Text: "Plays after INTRO VIDEO" To Purple Color
   - Added   Text: ">>> INTRO VIDEO <<<"
   - ADded   Text: ">>> Add Videos To PLAYLIST <<<"
-  - 
+  - WORKS AWESOME!!!
   
 
 
