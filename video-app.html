@@ -3312,22 +3312,36 @@
   /* ═══════════════════════════════════════════════════════
      NLE REVERSE PLAYBACK SIMULATION
   ═══════════════════════════════════════════════════════ */
-  let reverseInterval = null;
+  let reverseRafId = null;
+  let lastReverseTime = 0;
+
   function stopReversePlayback() {
-    if (reverseInterval) { clearInterval(reverseInterval); reverseInterval = null; }
+    if (reverseRafId) { cancelAnimationFrame(reverseRafId); reverseRafId = null; }
   }
+
   function startReversePlayback() {
     stopReversePlayback();
     AP.pause(); // Stop forward execution
-    // Seek backward by 0.2s every 100ms (approx 2x speed rewind)
-    reverseInterval = setInterval(() => {
-      if (AP.currentTime <= 0) {
+    
+    lastReverseTime = performance.now();
+    const speed = 1.0; // 1x reverse speed
+
+    function reverseStep(timestamp) {
+      const deltaMs = timestamp - lastReverseTime;
+      lastReverseTime = timestamp;
+      
+      const newTime = AP.currentTime - ((deltaMs / 1000) * speed);
+      if (newTime <= 0) {
         stopReversePlayback();
         AP.seek(0);
         return;
       }
-      AP.seek(Math.max(0, AP.currentTime - 0.2));
-    }, 100);
+      
+      AP.seek(newTime);
+      reverseRafId = requestAnimationFrame(reverseStep);
+    }
+    
+    reverseRafId = requestAnimationFrame(reverseStep);
   }
 
   /* ═══════════════════════════════════════════════════════
