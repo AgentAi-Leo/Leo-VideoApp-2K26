@@ -2872,6 +2872,24 @@
     }
   };
 
+  document.addEventListener('mouseover', e => {
+    const introEl = e.target.closest('#intro-preview');
+    if (introEl && State.introVideo?.url) {
+      HoverPreview.show(State.introVideo.url, e);
+    }
+  });
+  
+  document.addEventListener('mouseout', e => {
+    const introEl = e.target.closest('#intro-preview');
+    if (introEl && (!e.relatedTarget || !introEl.contains(e.relatedTarget))) {
+      HoverPreview.hide();
+    }
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (e.target.closest('#intro-preview')) HoverPreview.setPosition(e);
+  });
+
   /* ═══════════════════════════════════════════════════════
      CREATE TAB — DOM refs
   ═══════════════════════════════════════════════════════ */
@@ -2915,15 +2933,8 @@
     if (intro?.url) {
       CRE.introPreview.innerHTML =
         `<span class="intro-dot"></span>${platformTag(intro.url)}<span>${esc(intro.title || intro.url)}</span>`;
-      
-      CRE.introPreview.onmouseenter = e => HoverPreview.show(intro.url, e);
-      CRE.introPreview.onmouseleave = () => HoverPreview.hide();
-      CRE.introPreview.onmousemove  = e => HoverPreview.setPosition(e);
     } else {
       CRE.introPreview.innerHTML = '';
-      CRE.introPreview.onmouseenter = null;
-      CRE.introPreview.onmouseleave = null;
-      CRE.introPreview.onmousemove  = null;
     }
   }
 
