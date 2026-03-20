@@ -60,6 +60,9 @@ ADDS vers-K
   - Updared PLAYLIST Delete X Icons to Really Red!
   - Brightened PLAYLIST Drag Icons 
   - Adding Short Video Previews To Intro Video & Playlist Items
+  - Incresaed Size Of Tab Icons
+  - Set DEFAULT playback speed to 1x After Selecting "PREVIEW"
+  -
 
 
 
