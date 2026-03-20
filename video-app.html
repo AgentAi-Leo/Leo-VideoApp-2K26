@@ -849,7 +849,10 @@
 
     /* ── Intro preview ── */
     .intro-preview {
-      margin-top: 10px;
+      margin-top: 0;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
       font-size: 1.23rem;
       color: var(--text-2);
       min-height: 0;
@@ -1515,9 +1518,6 @@
               <button id="btn-set-intro" class="btn btn--primary">Set Intro</button>
               <button id="btn-clear-intro" class="btn btn--danger btn--sm">Clear</button>
             </div>
-
-            <!-- Intro preview row -->
-            <div id="intro-preview" class="intro-preview" aria-live="polite"></div>
           </div>
 
           <!-- Add Video to Playlist -->
@@ -1550,6 +1550,9 @@
 
           <!-- Playlist List -->
           <div class="card" id="playlist-card">
+            <!-- Intro preview row -->
+            <div id="intro-preview" class="intro-preview" aria-live="polite"></div>
+
             <h3 class="card-title">Playlist <span id="playlist-count" class="badge">0</span></h3>
 
             <ul id="playlist-list" class="playlist-list" aria-label="Playlist items" role="list">
