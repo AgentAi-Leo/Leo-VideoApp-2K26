@@ -3468,6 +3468,16 @@
         e.preventDefault();
         startReversePlayback();
         break;
+      case 'h':
+        e.preventDefault();
+        stopReversePlayback();
+        if (AP.duration > 0) AP.seek(Math.max(0, AP.currentTime - 10));
+        break;
+      case ';':
+        e.preventDefault();
+        stopReversePlayback();
+        if (AP.duration > 0) AP.seek(Math.min(AP.duration, AP.currentTime + 10));
+        break;
       case '.':
         e.preventDefault();
         stopReversePlayback();

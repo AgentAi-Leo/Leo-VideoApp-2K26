@@ -46,6 +46,8 @@ ADDS vers-J
   - J = Play Reverse
   - K = Pause
   - , & .  = Frame Advance
+  - H = Seek Back 10s
+  - ; = Seek Forward 10s
   - RIGHT Arrow Key = Next Video
   - LEFT Arrow = Previous Video
   - REMOVED 1.25X Variable Speed Option
