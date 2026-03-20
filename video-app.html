@@ -3311,43 +3311,77 @@
   /* ═══════════════════════════════════════════════════════
      NLE REVERSE PLAYBACK SIMULATION
   ═══════════════════════════════════════════════════════ */
-  let reverseRafId = null;
-  let lastReverseTime = 0;
+  let reverseActive = false;
+  let reverseSpeed = 1.0;
 
   function stopReversePlayback() {
-    if (reverseRafId) { cancelAnimationFrame(reverseRafId); reverseRafId = null; }
+    reverseActive = false;
+    if (window.__cleanupReverse) {
+      window.__cleanupReverse();
+      window.__cleanupReverse = null;
+    }
   }
 
-  let reverseSpeed = 1.0;
   function startReversePlayback() {
-    if (reverseRafId) {
+    if (reverseActive) {
       reverseSpeed = Math.min(2.0, reverseSpeed + 0.5);
       showToast('-' + reverseSpeed + 'x Speed');
       return;
     }
-    stopReversePlayback();
-    AP.pause(); // Stop forward execution
     
-    lastReverseTime = performance.now();
+    stopReversePlayback();
+    AP.pause();
+    reverseActive = true;
     reverseSpeed = 1.0;
-    let targetTime = AP.currentTime; // Decoupled logical time
 
-    function reverseStep(timestamp) {
-      const deltaMs = timestamp - lastReverseTime;
-      lastReverseTime = timestamp;
+    if (AP.type === 'native') {
+      let targetTime = DOM.video.currentTime;
+      let lastTime = performance.now();
       
-      targetTime -= (deltaMs / 1000) * reverseSpeed;
-      if (targetTime <= 0) {
-        stopReversePlayback();
-        AP.seek(0);
-        return;
-      }
-      
-      AP.seek(targetTime);
-      reverseRafId = requestAnimationFrame(reverseStep);
+      const onSeeked = () => {
+        if (!reverseActive) return;
+        const now = performance.now();
+        let delta = (now - lastTime) / 1000;
+        lastTime = now;
+        
+        // Clamp the time delta to stay smooth (avoid massive jumps if a seek took a long time)
+        if (delta > 0.2) delta = 0.2;
+        if (delta < 0.03) delta = 0.03; // At least 1 frame per step
+
+        targetTime = Math.max(0, targetTime - (delta * reverseSpeed));
+        
+        if (targetTime <= 0) {
+          stopReversePlayback();
+          DOM.video.currentTime = 0;
+          return;
+        }
+        DOM.video.currentTime = targetTime;
+      };
+
+      DOM.video.addEventListener('seeked', onSeeked);
+      window.__cleanupReverse = () => DOM.video.removeEventListener('seeked', onSeeked);
+
+      // Kick off the loop
+      lastTime = performance.now();
+      targetTime = Math.max(0, targetTime - 0.03);
+      DOM.video.currentTime = targetTime;
+
+    } else {
+      // Fallback for YouTube/Vimeo (no tight synchronous event loop available)
+      let targetTime = AP.currentTime;
+      const iv = setInterval(() => {
+        if (!reverseActive) return clearInterval(iv);
+        targetTime -= 0.1 * reverseSpeed;
+        if (targetTime <= 0) {
+          stopReversePlayback();
+          AP.seek(0);
+          return;
+        }
+        AP.seek(Math.max(0, targetTime));
+      }, 100);
+      window.__cleanupReverse = () => clearInterval(iv);
     }
     
-    reverseRafId = requestAnimationFrame(reverseStep);
     showToast('-1x Speed');
   }
 
