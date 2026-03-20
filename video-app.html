@@ -3363,9 +3363,7 @@
       case ' ':
       case 'k':
         e.preventDefault();
-        stopReversePlayback();
-        AP.pause();
-        // UI toggle is handled by State/polling, but we explicitly pause.
+        DOM.btnPlayPause.click();
         break;
       case 'l':
         e.preventDefault();
