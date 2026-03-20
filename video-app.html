@@ -1997,6 +1997,7 @@
 
     destroy() {
       stopProgressPolling();
+      if (typeof stopReversePlayback === 'function') stopReversePlayback();
       if (this.type === 'native') {
         try { DOM.video.pause(); } catch {}   // stop native video immediately
       }
@@ -2673,6 +2674,7 @@
   // Play / Pause
   DOM.btnPlayPause.addEventListener('click', e => {
     e.stopPropagation();
+    if (typeof stopReversePlayback === 'function') stopReversePlayback();
     if (State.isPlaying) {
       AP.pause();
     } else {
@@ -3308,6 +3310,27 @@
   }
 
   /* ═══════════════════════════════════════════════════════
+     NLE REVERSE PLAYBACK SIMULATION
+  ═══════════════════════════════════════════════════════ */
+  let reverseInterval = null;
+  function stopReversePlayback() {
+    if (reverseInterval) { clearInterval(reverseInterval); reverseInterval = null; }
+  }
+  function startReversePlayback() {
+    stopReversePlayback();
+    AP.pause(); // Stop forward execution
+    // Seek backward by 0.2s every 100ms (approx 2x speed rewind)
+    reverseInterval = setInterval(() => {
+      if (AP.currentTime <= 0) {
+        stopReversePlayback();
+        AP.seek(0);
+        return;
+      }
+      AP.seek(Math.max(0, AP.currentTime - 0.2));
+    }, 100);
+  }
+
+  /* ═══════════════════════════════════════════════════════
      KEYBOARD SHORTCUTS
   ═══════════════════════════════════════════════════════ */
   document.addEventListener('keydown', e => {
@@ -3340,15 +3363,30 @@
       case ' ':
       case 'k':
         e.preventDefault();
-        DOM.btnPlayPause.click();
+        stopReversePlayback();
+        AP.pause();
+        // UI toggle is handled by State/polling, but we explicitly pause.
         break;
       case 'l':
         e.preventDefault();
-        if (AP.duration > 0) AP.seek(Math.min(AP.duration, AP.currentTime + 10));
+        stopReversePlayback();
+        AP.play();
         break;
       case 'j':
         e.preventDefault();
-        if (AP.duration > 0) AP.seek(Math.max(0, AP.currentTime - 10));
+        startReversePlayback();
+        break;
+      case '.':
+        e.preventDefault();
+        stopReversePlayback();
+        AP.pause();
+        if (AP.duration > 0) AP.seek(Math.min(AP.duration, AP.currentTime + (1/30)));
+        break;
+      case ',':
+        e.preventDefault();
+        stopReversePlayback();
+        AP.pause();
+        if (AP.duration > 0) AP.seek(Math.max(0, AP.currentTime - (1/30)));
         break;
       case 'arrowright':
         e.preventDefault();
