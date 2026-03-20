@@ -41,7 +41,7 @@ ADDS vers-I
 ADDS vers-J
   - SHIFT + F = Full Screen Mode
   - SHIFT + M = Mute/Unmute
-  - L = Play Forward
+  - L = Play Forward w/Speed Increase Ability
   - J = Play Reverse
   - K = Pause
   - , & .  = Frame Advance

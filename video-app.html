@@ -3344,6 +3344,32 @@
     reverseRafId = requestAnimationFrame(reverseStep);
   }
 
+  function increaseSpeedAndPlay() {
+    stopReversePlayback();
+    if (!State.isPlaying) {
+      AP.play();
+      return;
+    }
+    
+    const activeBtn = DOM.speedScroll.querySelector('.speed-btn--active');
+    let rate = activeBtn ? parseFloat(activeBtn.dataset.rate) : 1;
+    
+    // Snap logic: if current is 1.25, jump to 1.5. Otherwise +0.5.
+    if (rate === 1.25) rate = 1.5;
+    else rate = Math.min(2, rate + 0.5);
+    
+    AP.setPlaybackRate(rate);
+    const btns = DOM.speedScroll.querySelectorAll('.speed-btn');
+    btns.forEach(b => b.classList.toggle('speed-btn--active', parseFloat(b.dataset.rate) === rate));
+    
+    const queue = buildQueue();
+    const item = queue[State.currentIndex];
+    if (item) { State.videoSpeeds[item.url] = rate; Storage.save(); }
+    
+    showControls(); // Reveal UI so user can see the highlighted button
+    showToast(rate + 'x Speed');
+  }
+
   /* ═══════════════════════════════════════════════════════
      KEYBOARD SHORTCUTS
   ═══════════════════════════════════════════════════════ */
@@ -3381,8 +3407,7 @@
         break;
       case 'l':
         e.preventDefault();
-        stopReversePlayback();
-        AP.play();
+        increaseSpeedAndPlay();
         break;
       case 'j':
         e.preventDefault();
