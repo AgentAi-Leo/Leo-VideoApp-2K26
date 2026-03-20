@@ -328,6 +328,11 @@
       flex-direction: column;
       flex: 1;
       min-width: 0;
+      opacity: 0;
+      transition: opacity 1.5s ease-in-out;
+    }
+    .controls-overlay.visible .controls-title-group {
+      opacity: 1;
     }
     .controls-title {
       font-size: 27px;
