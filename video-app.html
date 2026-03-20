@@ -2042,7 +2042,7 @@
 
     seek(seconds) {
       if (this.type === 'native')  DOM.video.currentTime = seconds;
-      else if (this.type === 'youtube') { if (this.yt) this.yt.seekTo(seconds, true); }
+      else if (this.type === 'youtube') { if (this.yt) { this.yt.seekTo(seconds, true); this._currentTime = seconds; } }
       else if (this.type === 'vimeo')   { vmMsg('seekTo', seconds); this._currentTime = seconds; }
     },
 
