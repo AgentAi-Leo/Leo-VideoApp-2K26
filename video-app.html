@@ -3169,6 +3169,11 @@
     const queue = buildQueue();
     if (queue.length === 0) { showToast('Add videos first'); return; }
     cancelGap(); // cancel any pending transition before restarting
+    
+    // Reset all global playback speeds back to 1x
+    State.videoSpeeds = {};
+    Storage.save();
+    
     switchTab('home');
     loadVideo(0, false); // user-initiated → will show controls on start
   });
