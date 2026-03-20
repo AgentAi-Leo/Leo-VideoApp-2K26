@@ -65,7 +65,7 @@ ADDS vers-K
   - Repositioned "Copied to Clipboard" To Top Center
 
 ADDS vers-L
-  - ??? 
+  - Renamed PREVIEW button to PLAY button and Keybinded to UP ARROW
 
 
 
