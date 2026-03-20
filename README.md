@@ -39,7 +39,13 @@ ADDS vers-I
   - WORKS GREAT!!!
 
 ADDS vers-J
-  - wwwww
+  - SHIFT + F = Full Screen Mode
+  - SHIFT + M = Mute/Unmute
+  - L = Play Forward
+  - J = Play Reverse
+  - K = Pause
+  - RIGHT Arrow Key = Next Video
+  - LEFT Arrow = Previous Video
 
 
 

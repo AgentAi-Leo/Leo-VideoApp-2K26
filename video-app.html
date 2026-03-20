@@ -3314,21 +3314,51 @@
     if (document.activeElement.matches('input, select, textarea')) return;
     if (!$('panel-home').classList.contains('panel--active')) return;
 
-    switch (e.key) {
+    const key = e.key.toLowerCase();
+
+    // Shift-based shortcuts
+    if (e.shiftKey) {
+      switch (key) {
+        case 'f':
+          e.preventDefault();
+          $('btn-fullscreen').click();
+          break;
+        case 'm':
+          e.preventDefault();
+          DOM.btnMute.click();
+          break;
+        case 'p':
+          e.preventDefault();
+          DOM.btnPlayPause.click();
+          break;
+      }
+      return;
+    }
+
+    // Normal shortcuts
+    switch (key) {
       case ' ':
       case 'k':
         e.preventDefault();
         DOM.btnPlayPause.click();
         break;
-      case 'ArrowRight':
+      case 'l':
+        e.preventDefault();
+        if (AP.duration > 0) AP.seek(Math.min(AP.duration, AP.currentTime + 10));
+        break;
+      case 'j':
+        e.preventDefault();
+        if (AP.duration > 0) AP.seek(Math.max(0, AP.currentTime - 10));
+        break;
+      case 'arrowright':
         e.preventDefault();
         { const q = buildQueue(); const fpi = firstPlaylistIdx(); const nx = State.currentIndex + 1; if (nx < q.length) loadVideo(nx); else if (q.length > fpi) loadVideo(fpi); }
         break;
-      case 'ArrowLeft':
+      case 'arrowleft':
         e.preventDefault();
         { const q = buildQueue(); const fpi = firstPlaylistIdx(); const prev = State.currentIndex - 1; if (prev >= fpi) loadVideo(prev); else if (State.currentIndex === 0) AP.seek(0); else if (q.length > 0) loadVideo(q.length - 1); }
         break;
-      case 'ArrowUp':
+      case 'arrowup':
         e.preventDefault();
         location.reload();
         break;
