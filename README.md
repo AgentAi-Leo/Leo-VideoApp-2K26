@@ -58,7 +58,8 @@ ADDS vers-K
   - Updated Tags To Show Domain Name Instead Of "OTHER"
   - Reducing Double TITLE Displays & Smoothed Out Fades For Cleaner Fade-Ins
   - Updared PLAYLIST Delete X Icons to Really Red!
-  - Brightened PLAYLIST Drag Icons  
+  - Brightened PLAYLIST Drag Icons 
+  - Adding Short Video Previews To Intro Video & Playlist Items
 
 
 
@@ -72,7 +73,7 @@ A production-ready, single-file mobile video player PWA. No build tools, no depe
 ## Features:
 
 ### Playback
-- Supports **YouTube**, **Vimeo**, and direct video files (`.mp4`, `.webm`)
+- Supports **YouTube**, **Vimeo**, and direct video files via URLs (`.mp4`, `.webm`)
 - Autoplay with audio on load (muted-then-unmute trick for browser policy compliance)
 - Unified player controls across all three video types
 - Playback speed control, seek bar, volume slider, mute toggle
@@ -83,7 +84,7 @@ A production-ready, single-file mobile video player PWA. No build tools, no depe
 - Add unlimited videos to the playlist queue
 - Drag-and-drop (desktop) and touch-drag (mobile) reordering
 - **Auto-fetch titles** from YouTube and Vimeo via oEmbed API — no API key required
-  - Paste URL → TAB → title fills in automatically
+- Paste URL → TAB → title fills in automatically
 - Playlist items truncate long titles with ellipsis
 
 ### Create Tab

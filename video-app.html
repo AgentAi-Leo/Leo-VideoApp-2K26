@@ -952,6 +952,34 @@
       font-size: 0.85rem;
     }
 
+    #hover-preview-container {
+      position: fixed;
+      width: 240px;
+      height: 135px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      z-index: 99999;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--t-fast);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #hover-preview-container.visible {
+      opacity: 1;
+    }
+    #hover-preview-container iframe,
+    #hover-preview-container video {
+      width: 100%;
+      height: 100%;
+      border: none;
+      object-fit: cover;
+    }
+
     .badge {
       display: inline-flex;
       align-items: center;
@@ -1239,6 +1267,8 @@
   </div>
 
   <div id="app">
+    <!-- Hover Preview Tooltip -->
+    <div id="hover-preview-container" aria-hidden="true"></div>
 
     <!-- ───────────────────────────────────────
          TAB CONTENT PANELS
@@ -2781,6 +2811,62 @@
   }, { passive: true });
 
   /* ═══════════════════════════════════════════════════════
+     HOVER PREVIEW TOOLTIP
+  ═══════════════════════════════════════════════════════ */
+  const HoverPreview = {
+    el: document.getElementById('hover-preview-container'),
+    timer: null,
+    teardownTimer: null,
+    
+    show(url, e) {
+      if (!url) return;
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => {
+        const info = detectVideoInfo(url);
+        let payload = '';
+        
+        if (info.type === 'youtube') {
+          payload = `<iframe src="https://www.youtube.com/embed/${info.id}?autoplay=1&mute=1&controls=0&modestbranding=1" allow="autoplay" allowfullscreen></iframe>`;
+        } else if (info.type === 'vimeo') {
+          payload = `<iframe src="https://player.vimeo.com/video/${info.id}?autoplay=1&muted=1&background=1" allow="autoplay" allowfullscreen></iframe>`;
+        } else {
+          payload = `<video src="${esc(url)}" autoplay muted loop playsinline></video>`;
+        }
+        
+        if (payload) {
+          this.el.innerHTML = payload;
+          this.el.classList.add('visible');
+          this.setPosition(e);
+          
+          // 15s auto-teardown
+          clearTimeout(this.teardownTimer);
+          this.teardownTimer = setTimeout(() => this.hide(), 15000);
+        }
+      }, 400); // 400ms hover intent debounce
+    },
+    
+    hide() {
+      clearTimeout(this.timer);
+      clearTimeout(this.teardownTimer);
+      if (this.el.classList.contains('visible')) {
+        this.el.classList.remove('visible');
+        this.el.innerHTML = '';
+      }
+    },
+    
+    setPosition(e) {
+      if (!this.el.classList.contains('visible')) return;
+      let x = e.clientX + 15;
+      let y = e.clientY + 15;
+      const r = this.el.getBoundingClientRect();
+      if (x + r.width > window.innerWidth) x = e.clientX - r.width - 15;
+      if (y + r.height > window.innerHeight) y = window.innerHeight - r.height - 10;
+      this.el.style.left = x + 'px';
+      this.el.style.top = y + 'px';
+    }
+  };
+
+  /* ═══════════════════════════════════════════════════════
      CREATE TAB — DOM refs
   ═══════════════════════════════════════════════════════ */
   const CRE = {
@@ -2823,8 +2909,15 @@
     if (intro?.url) {
       CRE.introPreview.innerHTML =
         `<span class="intro-dot"></span>${platformTag(intro.url)}<span>${esc(intro.title || intro.url)}</span>`;
+      
+      CRE.introPreview.onmouseenter = e => HoverPreview.show(intro.url, e);
+      CRE.introPreview.onmouseleave = () => HoverPreview.hide();
+      CRE.introPreview.onmousemove  = e => HoverPreview.setPosition(e);
     } else {
       CRE.introPreview.innerHTML = '';
+      CRE.introPreview.onmouseenter = null;
+      CRE.introPreview.onmouseleave = null;
+      CRE.introPreview.onmousemove  = null;
     }
   }
 
@@ -2873,6 +2966,10 @@
       li.addEventListener('dragleave', dndLeave);
       li.addEventListener('drop',      dndDrop);
       li.addEventListener('dragend',   dndEnd);
+
+      li.addEventListener('mouseenter', e => HoverPreview.show(item.url, e));
+      li.addEventListener('mouseleave', () => HoverPreview.hide());
+      li.addEventListener('mousemove',  e => HoverPreview.setPosition(e));
 
       li.querySelector('.playlist-item__drag')
         .addEventListener('touchstart', touchDragStart, { passive: true });
