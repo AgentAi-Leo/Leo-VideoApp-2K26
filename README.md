@@ -66,7 +66,8 @@ ADDS vers-K
 
 ADDS vers-L
   - Renamed PREVIEW button to > PLAY button and Keybinded to UP ARROW
-  - Removed "Paste URL then TAB to Autofill TITLE" Text
+  - Removed Text: "Paste URL then TAB to Autofill TITLE"
+  - Removed Text: "Supports YouTube, Vimeo, or direct .mp4/.webm URLs"
 
 
 
