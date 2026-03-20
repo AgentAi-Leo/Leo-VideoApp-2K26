@@ -2872,24 +2872,6 @@
     }
   };
 
-  document.addEventListener('mouseover', e => {
-    const introEl = e.target.closest('#intro-preview');
-    if (introEl && State.introVideo?.url) {
-      HoverPreview.show(State.introVideo.url, e);
-    }
-  });
-  
-  document.addEventListener('mouseout', e => {
-    const introEl = e.target.closest('#intro-preview');
-    if (introEl && (!e.relatedTarget || !introEl.contains(e.relatedTarget))) {
-      HoverPreview.hide();
-    }
-  });
-
-  document.addEventListener('mousemove', e => {
-    if (e.target.closest('#intro-preview')) HoverPreview.setPosition(e);
-  });
-
   /* ═══════════════════════════════════════════════════════
      CREATE TAB — DOM refs
   ═══════════════════════════════════════════════════════ */
@@ -2907,6 +2889,13 @@
     empty:        $('playlist-empty'),
     btnClear:     $('btn-clear-playlist'),
   };
+
+  // Static binding for intro preview tooltips
+  CRE.introPreview.addEventListener('mouseenter', e => {
+    if (State.introVideo?.url) HoverPreview.show(State.introVideo.url, e);
+  });
+  CRE.introPreview.addEventListener('mouseleave', () => HoverPreview.hide());
+  CRE.introPreview.addEventListener('mousemove', e => HoverPreview.setPosition(e));
 
   /* ── HTML escape (XSS safety) ── */
   function esc(str) {
