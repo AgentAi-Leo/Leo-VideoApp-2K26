@@ -71,7 +71,7 @@ ADDS vers-L
   - Updated Text: "Add Video" to "Add Videos To PLAYLIST"
   - Updated Text: "Plays first, before your playlist." To Purple Color
   - Added   Text: "Plays after INTRO VIDEO" To Purple Color
-  - Added   Text: "* INTRO VIDEO *" To Purple Color
+  - Added   Text: ">>> INTRO VIDEO <<<"
   
 
 
