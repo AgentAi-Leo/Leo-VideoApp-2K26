@@ -854,6 +854,7 @@
       color: var(--text-2);
       min-height: 0;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 8px;
@@ -2932,7 +2933,10 @@
     const intro = State.introVideo;
     if (intro?.url) {
       CRE.introPreview.innerHTML =
-        `<span class="intro-dot"></span>${platformTag(intro.url)}<span>${esc(intro.title || intro.url)}</span>`;
+        `<h3 class="card-title" style="margin-bottom: 12px; margin-top: 0;">Intro Video</h3>
+         <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+           <span class="intro-dot"></span>${platformTag(intro.url)}<span style="font-size:1rem; color:var(--text);">${esc(intro.title || intro.url)}</span>
+         </div>`;
     } else {
       CRE.introPreview.innerHTML = '';
     }
