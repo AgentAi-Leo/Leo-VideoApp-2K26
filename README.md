@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-K
+# VideoApp - v1 - vers-L
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -63,6 +63,9 @@ ADDS vers-K
   - Incresaed Size Of Tab Icons
   - Set DEFAULT playback speed to 1x After Selecting "PREVIEW"
   - Repositioned "Copied to Clipboard" To Top Center
+
+ADDS vers-L
+  - ??? 
 
 
 
