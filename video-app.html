@@ -3560,6 +3560,14 @@
   ═══════════════════════════════════════════════════════ */
   document.addEventListener('keydown', e => {
     if (document.activeElement.matches('input, select, textarea')) return;
+
+    // Global ArrowUp PREVIEW trigger
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      $('btn-preview').click();
+      return;
+    }
+
     if (!$('panel-home').classList.contains('panel--active')) return;
 
     const key = e.key.toLowerCase();
