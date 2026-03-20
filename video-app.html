@@ -2371,6 +2371,12 @@
     DOM.controlsTitle.textContent   = displayTitle;
     DOM.controlsCreator.textContent = item.creator || '';
     DOM.controlsTag.innerHTML       = platformTag(item.url);
+
+    // Force animation reset for new video track
+    DOM.controlsTitleGroup.classList.remove('title-fade-in');
+    void DOM.controlsTitleGroup.offsetWidth;
+    DOM.controlsTitleGroup.classList.add('title-fade-in');
+
     showControls(true); // force-show controls on video load
     // Fetch creator if not yet cached, then update display if still current item
     if (!item.creator) {
@@ -2499,13 +2505,16 @@
   const CONTROLS_HIDE_DELAY = 4200;
 
   function showControls(autoHide = true) {
+    const wasHidden = !State.controlsVisible;
     State.controlsVisible = true;
     DOM.controlsOverlay.classList.add('visible');
     DOM.tabBar.classList.remove('tab-bar--hidden'); // reveal nav with controls
 
-    DOM.controlsTitleGroup.classList.remove('title-fade-in');
-    void DOM.controlsTitleGroup.offsetWidth; // force reflow to restart animation
-    DOM.controlsTitleGroup.classList.add('title-fade-in');
+    if (wasHidden) {
+      DOM.controlsTitleGroup.classList.remove('title-fade-in');
+      void DOM.controlsTitleGroup.offsetWidth; // force reflow to restart animation
+      DOM.controlsTitleGroup.classList.add('title-fade-in');
+    }
 
     clearTimeout(State.controlsTimer);
     if (autoHide && State.isPlaying) {
