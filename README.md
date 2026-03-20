@@ -76,7 +76,8 @@ ADDS vers-L
   - WORKS AWESOME!!!
 
   ADDS vers-M
-  - 
+  - Cleaned Up INTRO VIDEO Section
+  - ALSO WORKS AWESOME!!!
   
 
 
