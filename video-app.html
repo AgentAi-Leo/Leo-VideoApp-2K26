@@ -40,7 +40,7 @@
       --glass-border:rgba(255,255,255,0.08);
 
       /* Spacing */
-      --tab-h:       60px;          /* bottom nav height */
+      --tab-h:       72px;          /* bottom nav height */
       --safe-bottom: env(safe-area-inset-bottom, 0px);
 
       /* Radius */
@@ -681,13 +681,13 @@
     }
 
     .tab-icon { 
-      width: 22px; 
-      height: 22px; 
-      transform: scale(1.35); 
-      transform-origin: bottom center;
-      margin-bottom: 2px;
+      width: 32px; 
+      height: 32px; 
+      flex-shrink: 0; 
+      min-width: 32px; 
+      min-height: 32px; 
     }
-    .tab-label { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em; margin-top: 4px; }
+    .tab-label { font-size: 0.75rem; font-weight: 500; letter-spacing: 0.04em; margin-top: 2px; }
 
     /* ═══════════════════════════════════════════════════
        CREATE TAB
