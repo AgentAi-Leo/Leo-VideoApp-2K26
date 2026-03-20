@@ -44,6 +44,7 @@ ADDS vers-J
   - L = Play Forward
   - J = Play Reverse
   - K = Pause
+  - , & .  = Frame Advance
   - RIGHT Arrow Key = Next Video
   - LEFT Arrow = Previous Video
 
