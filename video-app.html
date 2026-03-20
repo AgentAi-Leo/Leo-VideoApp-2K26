@@ -328,11 +328,13 @@
       flex-direction: column;
       flex: 1;
       min-width: 0;
-      opacity: 0;
-      transition: opacity 1.5s ease-in-out;
     }
-    .controls-overlay.visible .controls-title-group {
-      opacity: 1;
+    @keyframes cinematicFadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .title-fade-in {
+      animation: cinematicFadeIn 1.5s ease-in-out forwards;
     }
     .controls-title {
       font-size: 27px;
@@ -1756,6 +1758,7 @@
     controlsTag:      $('controls-tag'),
     controlsOverlay:  $('controls-overlay'),
     controlsTitle:    $('controls-title'),
+    controlsTitleGroup: document.querySelector('.controls-title-group'),
     emptyState:       $('empty-state'),
     // Controls
     btnPlayPause:     $('btn-play-pause'),
@@ -2499,6 +2502,11 @@
     State.controlsVisible = true;
     DOM.controlsOverlay.classList.add('visible');
     DOM.tabBar.classList.remove('tab-bar--hidden'); // reveal nav with controls
+
+    DOM.controlsTitleGroup.classList.remove('title-fade-in');
+    void DOM.controlsTitleGroup.offsetWidth; // force reflow to restart animation
+    DOM.controlsTitleGroup.classList.add('title-fade-in');
+
     clearTimeout(State.controlsTimer);
     if (autoHide && State.isPlaying) {
       State.controlsTimer = setTimeout(hideControls, CONTROLS_HIDE_DELAY);
@@ -2508,6 +2516,7 @@
   function hideControls() {
     State.controlsVisible = false;
     DOM.controlsOverlay.classList.remove('visible');
+    DOM.controlsTitleGroup.classList.remove('title-fade-in');
     clearTimeout(State.controlsTimer);
     // Hide tab bar only when on Home (immersive video mode)
     if ($('panel-home').classList.contains('panel--active')) {
