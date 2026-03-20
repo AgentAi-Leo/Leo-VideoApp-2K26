@@ -54,7 +54,7 @@ ADDS vers-J
   - REMOVED 1.25X Variable Speed Option
 
 ADDS vers-K
-  -
+  - Smoothed YTube Frame Advances (, & . Keys)
 
 
 
