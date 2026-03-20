@@ -275,24 +275,7 @@
     /* ═══════════════════════════════════════════════════
        TITLE OVERLAY
     ═══════════════════════════════════════════════════ */
-    .title-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      padding: 48px 20px 24px;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.75) 0%, transparent 100%);
-      font-size: 1rem;
-      font-weight: 600;
-      color: #fff;
-      letter-spacing: 0.01em;
-      pointer-events: none;
-      opacity: 0;
-      z-index: 3;
-      transition: opacity var(--t-slow);
-    }
 
-    .title-overlay.visible { opacity: 1; }
 
     .skip-overlay {
       position: absolute; top: 50%; transform: translateY(-50%);
@@ -303,20 +286,7 @@
     .skip-overlay.skip-right { left: auto; right: 15%; text-align: right; }
     .skip-overlay.visible { opacity: 1; transition: none; }
 
-    #title-overlay-text   { display: block; font-size: 27px; font-weight: 700; white-space: pre-line; }
-    #title-overlay-creator {
-      font-size: 1rem;
-      font-weight: 600;
-      letter-spacing: 0.01em;
-    }
-    #title-overlay-creator:empty { display: none; }
-    .overlay-meta-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 4px;
-    }
-    .overlay-meta-row:not(:has(> :not(:empty))) { display: none; }
+
 
     /* ═══════════════════════════════════════════════════
        CONTROLS OVERLAY
@@ -1301,15 +1271,6 @@
         <!-- Seek accumulation overlay -->
         <div id="skip-overlay" class="skip-overlay" aria-hidden="true"></div>
 
-        <!-- Title overlay — fades out after 5s -->
-        <div id="title-overlay" class="title-overlay" aria-live="polite">
-          <span id="title-overlay-text"></span>
-          <span class="overlay-meta-row">
-            <span id="title-overlay-creator"></span>
-            <span id="title-overlay-tag"></span>
-          </span>
-        </div>
-
         <!-- Tap target: captures taps when controls are hidden -->
         <div id="player-tap-target" aria-hidden="true"></div>
 
@@ -1786,10 +1747,6 @@
     playerTapTarget:  $('player-tap-target'),
     bufferingOverlay: $('buffering-overlay'),
     skipOverlay:      $('skip-overlay'),
-    titleOverlay:     $('title-overlay'),
-    titleText:        $('title-overlay-text'),
-    titleCreator:     $('title-overlay-creator'),
-    titleTag:         $('title-overlay-tag'),
     controlsCreator:  $('controls-creator'),
     controlsTag:      $('controls-tag'),
     controlsOverlay:  $('controls-overlay'),
@@ -2403,13 +2360,10 @@
     })();
     const breakIdx = rawTitle.length > 60 ? rawTitle.lastIndexOf(' ', 60) : -1;
     const displayTitle = breakIdx > 0 ? rawTitle.slice(0, breakIdx) + '\n' + rawTitle.slice(breakIdx + 1) : rawTitle;
-    DOM.titleText.textContent       = displayTitle;
     DOM.controlsTitle.textContent   = displayTitle;
-    DOM.titleCreator.textContent    = item.creator || '';
     DOM.controlsCreator.textContent = item.creator || '';
-    DOM.titleTag.innerHTML          = platformTag(item.url);
     DOM.controlsTag.innerHTML       = platformTag(item.url);
-    showTitleOverlay(true); // force-show even if controls visible
+    showControls(true); // force-show controls on video load
     // Fetch creator if not yet cached, then update display if still current item
     if (!item.creator) {
       fetchVideoCreator(item.url).then(c => {
@@ -2417,7 +2371,6 @@
         item.creator = c;
         Storage.save();
         if (queue[State.currentIndex] === item) {
-          DOM.titleCreator.textContent    = c;
           DOM.controlsCreator.textContent = c;
         }
       });
@@ -2535,12 +2488,10 @@
   /* ═══════════════════════════════════════════════════════
      CONTROLS VISIBILITY
   ═══════════════════════════════════════════════════════ */
-  const CONTROLS_HIDE_DELAY = 750;
+  const CONTROLS_HIDE_DELAY = 2200;
 
   function showControls(autoHide = true) {
     State.controlsVisible = true;
-    DOM.titleOverlay.classList.remove('visible'); // hide title overlay when controls appear
-    clearTimeout(titleTimer);
     DOM.controlsOverlay.classList.add('visible');
     DOM.tabBar.classList.remove('tab-bar--hidden'); // reveal nav with controls
     clearTimeout(State.controlsTimer);
@@ -2564,16 +2515,6 @@
     else showControls();
   }
 
-  /* ═══════════════════════════════════════════════════════
-     TITLE OVERLAY
-  ═══════════════════════════════════════════════════════ */
-  let titleTimer = null;
-  function showTitleOverlay(force = false) {
-    if (!force && State.controlsVisible) return;
-    DOM.titleOverlay.classList.add('visible');
-    clearTimeout(titleTimer);
-    titleTimer = setTimeout(() => DOM.titleOverlay.classList.remove('visible'), 5000);
-  }
 
   /* ═══════════════════════════════════════════════════════
      PLAY / PAUSE ICON SYNC

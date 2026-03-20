@@ -56,6 +56,7 @@ ADDS vers-J
 ADDS vers-K
   - Smoothed YTube Frame Advances (, & . Keys)
   - Updated Tags To Show Domain Name Instead Of "OTHER"
+  - Reducing Double TITLE Displays 
 
 
 
