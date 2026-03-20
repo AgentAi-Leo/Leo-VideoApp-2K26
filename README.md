@@ -69,6 +69,7 @@ ADDS vers-L
   - Removed Text: "Paste URL then TAB to Autofill TITLE"
   - Removed Text: "Supports YouTube, Vimeo, or direct .mp4/.webm URLs"
   - Updated Text: "Add Video" to "Add Videos To PLAYLIST"
+  - Updated Text: "Plays first, before your playlist." To Purple Color
 
 
 
