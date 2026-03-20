@@ -849,15 +849,12 @@
 
     /* ── Intro preview ── */
     .intro-preview {
-      margin-top: 0;
-      margin-bottom: 16px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid var(--border);
+      margin-top: 12px;
+      margin-bottom: 24px;
       font-size: 1.23rem;
       color: var(--text-2);
       min-height: 0;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 8px;
@@ -1497,6 +1494,9 @@
             </div>
             <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays first, before your playlist.</p>
 
+            <!-- Intro preview row -->
+            <div id="intro-preview" class="intro-preview" aria-live="polite"></div>
+
             <div class="input-group">
               <input
                 id="intro-url"
@@ -1550,9 +1550,6 @@
 
           <!-- Playlist List -->
           <div class="card" id="playlist-card">
-            <!-- Intro preview row -->
-            <div id="intro-preview" class="intro-preview" aria-live="polite"></div>
-
             <h3 class="card-title">Playlist <span id="playlist-count" class="badge">0</span></h3>
 
             <ul id="playlist-list" class="playlist-list" aria-label="Playlist items" role="list">
@@ -2936,10 +2933,7 @@
     const intro = State.introVideo;
     if (intro?.url) {
       CRE.introPreview.innerHTML =
-        `<h3 class="card-title" style="margin-bottom: 12px; margin-top: 0;">Intro Video</h3>
-         <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
-           <span class="intro-dot"></span>${platformTag(intro.url)}<span style="font-size:1rem; color:var(--text);">${esc(intro.title || intro.url)}</span>
-         </div>`;
+        `<span class="intro-dot"></span>${platformTag(intro.url)}<span style="font-size:1rem; color:var(--text);">${esc(intro.title || intro.url)}</span>`;
     } else {
       CRE.introPreview.innerHTML = '';
     }
