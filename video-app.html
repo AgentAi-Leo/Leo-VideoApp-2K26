@@ -905,6 +905,24 @@
       flex-direction: column;
       gap: 6px;
       margin-top: 8px;
+      max-height: 480px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 6px;
+      padding-bottom: 8px;
+    }
+
+    /* Custom Webkit Scrollbar */
+    .playlist-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .playlist-list::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .playlist-list::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      border-radius: 10px;
     }
 
     .playlist-item {
