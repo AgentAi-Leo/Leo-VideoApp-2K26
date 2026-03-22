@@ -14,7 +14,8 @@ Instead of rigid pagination, we implement a **Fixed-Height Scrollable Container*
 2. Apply `overflow-y: auto;` and `overflow-x: hidden;` to trigger vertical scrolling only when the item ceiling is breached.
 3. Design a custom Webkit scrollbar (matching the purple/dark glassmorphism theme) so it renders as a premium, native element rather than a clunky default grey browser scrollbar.
 4. Scale all three terminal "Clear" action strings completely natively to `100% width` directly mirroring the volumetric visual weight of the master action nodes.
-5. Ensure SortableJS drag-and-drop auto-scrolls the container when pulling a list item toward the top or bottom boundaries.
+5. Manually upscale the typography padding arrays across the 3 `.btn--primary` Add parameters so they exactly mimic the external geometrical footprint forced structurally by the integrated `.btn--preview` SVGs.
+6. Ensure SortableJS drag-and-drop auto-scrolls the container when pulling a list item toward the top or bottom boundaries.
 
 ## User Review Required
 > [!IMPORTANT]
