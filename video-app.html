@@ -839,6 +839,20 @@
     }
     .btn--primary:hover { box-shadow: 0 4px 22px rgba(124,106,247,0.55); }
 
+    .step-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      box-shadow: inset 0 0 0 100px rgba(0,0,0,0.25), 0 4px 12px rgba(124,106,247,0.35);
+    }
+
     .btn--danger {
       background: rgba(239,68,68,0.18);
       color: var(--danger);
@@ -1492,7 +1506,8 @@
             <!-- Intro Playlist Section -->
             <div class="card" id="intro-playlist-card" style="margin: 0;">
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
-              <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> CREATE: INTRO PLAYLIST <<<</h3>
+              <span class="step-badge">1</span>
+              <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">CREATE: INTRO PLAYLIST</h3>
             </div>
             <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays first, before your main playlist. (<span id="intro-count">0</span> items)</p>
 
@@ -1512,7 +1527,8 @@
           <!-- Main Playlist Section -->
           <div class="card" id="playlist-card" style="margin: 0;">
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
-              <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> CREATE: MAIN PLAYLIST <<<</h3>
+              <span class="step-badge">2</span>
+              <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">CREATE: MAIN PLAYLIST</h3>
             </div>
             <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays after INTRO PLAYLIST. (<span id="playlist-count">0</span> items)</p>
 
@@ -1533,7 +1549,7 @@
                 autocomplete="off"
               />
             </div>
-            <button id="btn-add-video" class="btn btn--primary" style="margin-bottom: 2rem;">Add to Playlist</button>
+            <button id="btn-add-video" class="btn btn--primary" style="margin-bottom: 2rem;">Add to Main Playlist</button>
 
             <ul id="playlist-list" class="playlist-list" aria-label="Playlist items" role="list">
               <!-- Items injected by JS -->
@@ -1566,7 +1582,8 @@
           <!-- Outro Playlist Section -->
           <div class="card" id="outro-playlist-card" style="margin: 0;">
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
-              <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> CREATE: OUTRO PLAYLIST <<<</h3>
+              <span class="step-badge">3</span>
+              <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">CREATE: OUTRO PLAYLIST</h3>
             </div>
             <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays last, after your main playlist. (<span id="outro-count">0</span> items)</p>
 
