@@ -12,6 +12,7 @@ The user has requested the `CREATE UI` be drastically minimized by transitioning
 ### CSS Layout Shifts
 - Apply `display: grid` or `display: flex` with wrap support to the `#create-sub-playlist` container.
 - Establish a responsive threshold (e.g. `minmax(320px, 1fr)`) so that the cards scale down into a vertical stack safely on mobile devices but display perfectly 3-wide horizontally on desktop monitors.
+- **Badge Layout Pivot:** Isolate numerical step badges on their own row above card headers using `flex-direction: column` to maximize clarity.
 
 ## Verification Plan
 ### Automated Tests
