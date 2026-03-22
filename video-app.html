@@ -1520,7 +1520,7 @@
 
             <ul id="intro-list" class="playlist-list" aria-label="Intro Playlist items" role="list"></ul>
             <div id="intro-empty" class="playlist-empty" aria-live="polite">No videos yet. Add one above.</div>
-            <div style="display:flex;align-items:center;justify-content:flex-start;margin-top:1rem">
+            <div style="display:flex;align-items:center;justify-content:center;margin-top:3rem">
               <button id="btn-clear-intro" class="btn btn--danger btn--sm">Clear Intro</button>
             </div>
           </div>
@@ -1560,10 +1560,7 @@
               No videos yet. Add one above.
             </div>
 
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:1rem">
-              <button id="btn-clear-playlist" class="btn btn--danger btn--sm">
-                Clear
-              </button>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:24px;margin-top:2.5rem;padding-bottom:1.5rem;border-bottom:1px solid var(--border);">
               <label id="black-gap-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.85rem;color:var(--text-2);user-select:none">
                 <input type="checkbox" id="chk-black-gap" style="width:17px;height:17px;accent-color:#00e5ff;cursor:pointer" />
                 Add 1.5 Seconds Black Between Videos
@@ -1577,6 +1574,11 @@
                 </button>
                 <span style="font-size:0.78rem;color:var(--text-2);letter-spacing:0.05em;font-weight:600">LOOP</span>
               </div>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:center;margin-top:1.5rem">
+              <button id="btn-clear-playlist" class="btn btn--danger btn--sm">
+                Clear Main
+              </button>
             </div>
           </div>
 
@@ -1596,7 +1598,7 @@
 
             <ul id="outro-list" class="playlist-list" aria-label="Outro Playlist items" role="list"></ul>
             <div id="outro-empty" class="playlist-empty" aria-live="polite">No videos yet. Add one above.</div>
-            <div style="display:flex;align-items:center;justify-content:flex-start;margin-top:1rem">
+            <div style="display:flex;align-items:center;justify-content:center;margin-top:3rem">
               <button id="btn-clear-outro" class="btn btn--danger btn--sm">Clear Outro</button>
             </div>
           </div>
