@@ -93,7 +93,7 @@ ADDS vers-L
   ADDS vers-P
   - Cleaned Up CREATE UI! Drastically Minimized - HORIZONTALLY STACKED.
   - Added Step Numbers To CREATE & Cleaned Up Misc UI Text/Tags/Buttons
-  - Add Scroll Bars To Playlist Sections  
+  - Added Scroll Bars To Playlist Sections  
   - LOOKS & WORKS AWESOME BUT SMALL!!! 
 
   ADDS vers-Q
@@ -105,7 +105,7 @@ ADDS vers-L
    - LOOKS & WORKS AWESOME - GREAT SIZE (ONLY IN ZEN FIREFOX)!!! 
  
  ADDS vers-S 
-   - 
+   - Added Airplay Support
 
    
 
