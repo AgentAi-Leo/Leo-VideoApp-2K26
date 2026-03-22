@@ -84,7 +84,8 @@ ADDS vers-L
   - Updated HOME Icon to WATCH TV Icon
   - Updated PLAYLIST NAMES To "CREATE: INTRO PLAYLIST", "CREATE: MAIN PLAYLIST", "CREATE: OUTRO PLAYLIST"
   - Capitalized Tab Text
-  - 
+  - WORKS AWESOME!!! NEXT-UP: CLEAN UP CREATE UI!
+
 
   
   
