@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-P
+# VideoApp - v1 - vers-Q
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -94,8 +94,10 @@ ADDS vers-L
   - Cleaned Up CREATE UI! Drastically Minimized - HORIZONTALLY STACKED.
   - Added Step Numbers To CREATE & Cleaned Up Misc UI Text/Tags/Buttons
   - Add Scroll Bars To Playlist Sections  
-  - LOOKS &WORKS AWESOME BUT SMALL!!! 
-  
+  - LOOKS & WORKS AWESOME BUT SMALL!!! 
+
+   ADDS vers-Q
+   - REAL Q - SMALL BUT AWESOME! 
 
 
 
