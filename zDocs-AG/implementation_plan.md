@@ -1,37 +1,25 @@
-# Multi-Playlist Architecture Overhaul Plan
+# Phase 2: Create UI Cleanup Plan (vers-O)
 
 ## Core Objective
-Upgrade the single-video "Intro" feature into a fully functional * INTRO PLAYLIST *, and introduce an identical * OUTRO PLAYLIST *. This transforms the app from a [Single Intro -> Main Playlist] sequence into a three-tiered pipeline: [Intro Playlist -> Main Playlist -> Outro Playlist].
+Now that the three-tiered sequence (Intro -> Main -> Outro) is fully synchronized and operational, the secondary workspace structure needs to be cleaned up for long-term scalability. The current Create navigation tab hosts multiple separate input and list cards linearly stacked. The goal of this phase is to refine the styling, spacing, grouping, and interaction models of the `#panel-create` layout to modernize the user experience.
+
+## User Review Required
+> [!NOTE]
+> **Pending User Direction**
+> The user stated: "CLEAN UP CREATE UI". I am officially awaiting clarification on exactly what the user intends for this cleanup before generating the detailed changes. Specifically:
+> 1. Which visual paradigms (collapsibles, spacing, merging input panels with list displays) does the user favor?
+> 2. Are there specific style references or UX layouts the user wants to mimic?
 
 ## Proposed Changes
 
-### State & Storage Mapping
-- **Modify** `State.introVideo` (Object) -> `State.introPlaylist` (Array of objects).
-- **Add** `State.outroPlaylist` (Array of objects).
-- **Add** LocalStorage keys `vapp_intro_playlist` and `vapp_outro_playlist`.
-
-### Component Duplication (HTML)
-- **Intro Card:** Refactor `#intro-card` to match `#playlist-card`. Replace the single-preview block with a dynamic `<ul id="intro-list">` container. Ensure "Add Setup" has its own `Add to Intro Playlist` button.
-- **Outro Card:** Duplicate the HTML structure of the `#playlist-card` and place it entirely below the Main Playlist. Give it `<ul id="outro-list">`.
-- **Add Form Integrations:** Instead of a single "Set Intro" button overriding the solitary item, transition "Add to Intro" and "Add to Outro" to push objects into their respective state arrays and re-render.
-
-### JavaScript Logic (DOM & Rendering)
-- Break out the hardcoded `renderPlaylist()` function into a generic `renderList(array, containerId, templateType)` to allow DRY rendering of the Intro, Main, and Outro lists cleanly.
-- Duplicate the `SortableJS` initialization loop to independently attach drag-and-drop mechanics to `#intro-list`, `#playlist-list`, and `#outro-list`.
-- Ensure item deletions (`removeItem`) can target the specific array safely (Intro, Main, or Outro).
-
-### Playback Queue Modification
-- **Video Player State Machine:** Refactor the `playNextVideo()` iterator. It currently expects `[Intro, Playlist]`. It must be rewritten to sequentially exhaust the arrays:
-  1. Iterate through `State.introPlaylist` until end.
-  2. Transition to `State.playlist` and iterate until end.
-  3. Transition to `State.outroPlaylist` and iterate until end.
-  4. Yield EOF or loop the entire super-sequence if `Loop` is enabled.
-- Ensure the "PREVIEW / PLAY" button triggers the exact first video in the highest available populated array.
+### Workspace Aggregation
+- **Merge Component Cards:** The 6 separated DOM cards (3 Add blocks + 3 List blocks) will be structurally condensed into exactly 3 universal workspace cards. 
+- The `#add-[target]-card` HTML elements will be stripped of their outer container and injected directly above the `<ul>` inside their `#target-playlist-card`. 
+- This reduces the visual footprint of the Create tab by 50% and localizes the contextual focus per playlist type.
 
 ## Verification Plan
 ### Automated Tests
-- Validate DOM arrays inject correctly independently of each other.
+- DOM layout consistency parsing for responsiveness.
+
 ### Manual Verification
-1. Add 2 videos to Intro, 2 to Main, 2 to Outro. 
-2. Play the first video and aggressively skip forward to ensure the state machine perfectly transitions boundary lines sequentially without crashing.
-3. Drag and drop items internally within the Outro playlist and verify state persists on reload.
+- Visual inspection of the Create Layout UI tab after user specifications are merged.
