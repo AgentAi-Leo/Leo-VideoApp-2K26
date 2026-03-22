@@ -105,7 +105,7 @@ ADDS vers-L
    - LOOKS & WORKS AWESOME - GREAT SIZE (ONLY IN ZEN FIREFOX)!!! 
  
  ADDS vers-S 
-   - Added Airplay Support
+   - Added Airplay Support Via Safari ONLY!!! (AT MOMENT)
 
    
 

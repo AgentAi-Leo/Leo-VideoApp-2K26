@@ -2335,6 +2335,9 @@
       onPlayerError();
     }
   }
+  
+  // Register the Vimeo postMessage router precisely once globally to completely eradicate event duplication loops.
+  window.addEventListener('message', handleVimeoMessage);
 
   /* ═══════════════════════════════════════════════════════
      CREATE YOUTUBE PLAYER
@@ -2409,7 +2412,6 @@
   ═══════════════════════════════════════════════════════ */
   function createVimeoPlayer(videoId, fromInit) {
     AP._vmFromInit = fromInit;
-    window.addEventListener('message', handleVimeoMessage);
 
     const params = new URLSearchParams({
       autoplay: 1,
