@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-R
+# VideoApp - v1 - vers-S
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -103,6 +103,9 @@ ADDS vers-L
    - Everything is AWESOME But VIDEO PLAYLISTS Are Too Small
    - Make Playlist Items Larger
    - LOOKS & WORKS AWESOME - GREAT SIZE (ONLY IN ZEN FIREFOX)!!! 
+ 
+ ADDS vers-S 
+   - 
 
    
 
