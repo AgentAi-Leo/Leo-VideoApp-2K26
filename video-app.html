@@ -1505,7 +1505,7 @@
           <!-- Horizontal Workspace Grid -->
           <div class="horizontal-playlist-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 48px; padding: 0 16px 48px 16px;">
             <!-- Intro Playlist Section -->
-            <div class="card" id="intro-playlist-card" style="margin: 0;">
+            <div class="card" id="intro-playlist-card" style="margin: 0; display: flex; flex-direction: column;">
             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;">
               <span class="step-badge">1</span>
               <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">CREATE: INTRO PLAYLIST</h3>
@@ -1520,13 +1520,13 @@
 
             <ul id="intro-list" class="playlist-list" aria-label="Intro Playlist items" role="list"></ul>
             <div id="intro-empty" class="playlist-empty" aria-live="polite">No videos yet. Add one above.</div>
-            <div style="display:flex;align-items:center;justify-content:center;margin-top:3rem">
+            <div style="display:flex;align-items:center;justify-content:center;margin-top:auto;padding-top:3rem;">
               <button id="btn-clear-intro" class="btn btn--danger btn--sm">Clear Intro</button>
             </div>
           </div>
 
           <!-- Main Playlist Section -->
-          <div class="card" id="playlist-card" style="margin: 0;">
+          <div class="card" id="playlist-card" style="margin: 0; display: flex; flex-direction: column;">
             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;">
               <span class="step-badge">2</span>
               <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">CREATE: MAIN PLAYLIST</h3>
@@ -1575,7 +1575,7 @@
                 <span style="font-size:0.78rem;color:var(--text-2);letter-spacing:0.05em;font-weight:600">LOOP</span>
               </div>
             </div>
-            <div style="display:flex;align-items:center;justify-content:center;margin-top:1.5rem">
+            <div style="display:flex;align-items:center;justify-content:center;margin-top:auto;padding-top:1.5rem;">
               <button id="btn-clear-playlist" class="btn btn--danger btn--sm">
                 Clear Main
               </button>
@@ -1583,7 +1583,7 @@
           </div>
 
           <!-- Outro Playlist Section -->
-          <div class="card" id="outro-playlist-card" style="margin: 0;">
+          <div class="card" id="outro-playlist-card" style="margin: 0; display: flex; flex-direction: column;">
             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;">
               <span class="step-badge">3</span>
               <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">CREATE: OUTRO PLAYLIST</h3>
@@ -1598,7 +1598,7 @@
 
             <ul id="outro-list" class="playlist-list" aria-label="Outro Playlist items" role="list"></ul>
             <div id="outro-empty" class="playlist-empty" aria-live="polite">No videos yet. Add one above.</div>
-            <div style="display:flex;align-items:center;justify-content:center;margin-top:3rem">
+            <div style="display:flex;align-items:center;justify-content:center;margin-top:auto;padding-top:3rem;">
               <button id="btn-clear-outro" class="btn btn--danger btn--sm">Clear Outro</button>
             </div>
           </div>
