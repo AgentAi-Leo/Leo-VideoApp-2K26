@@ -3327,18 +3327,9 @@
     updateLoopBtn(); // reflect persisted loop state
     $('chk-black-gap').checked = State.blackGap;
 
-    // Restore intro fields from saved state
-    if (State.introVideo) {
-      CRE.introUrl.value   = State.introVideo.url   || '';
-      CRE.introTitle.value = State.introVideo.title || '';
-      // Mark which URL this title was fetched for so autoFillTitle can detect changes
-      CRE.introTitle.dataset.fetchedFor = State.introVideo.url || '';
-    }
-
     hideControls();                                 // controls OFF by default
     DOM.tabBar.classList.add('tab-bar--hidden');    // tab bar hidden on Home
-    renderIntroPreview();
-    renderPlaylist();
+    renderAllLists();
     updateHomeEmptyState();
 
     // Autoplay first item in queue if available
