@@ -94,7 +94,7 @@ ADDS vers-L
   - Cleaned Up CREATE UI! Drastically Minimized - HORIZONTALLY STACKED.
   - Added Step Numbers To CREATE & Cleaned Up Misc UI Text/Tags/Buttons
   - Add Scroll Bars To Playlist Sections  
-  - WORKS AWESOME!!! 
+  - LOOKS &WORKS AWESOME BUT SMALL!!! 
   
 
 
