@@ -1475,7 +1475,7 @@
         </div>
 
         <!-- ── Sub-panel: PLAYLIST ── -->
-        <div id="create-sub-playlist" class="create-subpanel create-subpanel--active" style="max-width:640px;margin-left:auto;margin-right:auto">
+        <div id="create-sub-playlist" class="create-subpanel create-subpanel--active" style="max-width:1400px;margin-left:auto;margin-right:auto">
 
           <!-- PREVIEW + CLEAR ALL + LOOP -->
           <div style="margin: 4.5em 16px 0.5em; display:flex; justify-content:center; gap:12px; flex-wrap:wrap">
@@ -1487,8 +1487,10 @@
             </button>
             <button id="btn-clear-all" class="btn btn--danger">CLEAR ALL</button>
           </div>
-          <!-- Intro Playlist Section -->
-          <div class="card" id="intro-playlist-card">
+          <!-- Horizontal Workspace Grid -->
+          <div class="horizontal-playlist-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; padding: 0 16px 24px 16px;">
+            <!-- Intro Playlist Section -->
+            <div class="card" id="intro-playlist-card" style="margin: 0;">
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
               <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> CREATE: INTRO PLAYLIST <<<</h3>
             </div>
@@ -1508,7 +1510,7 @@
           </div>
 
           <!-- Main Playlist Section -->
-          <div class="card" id="playlist-card">
+          <div class="card" id="playlist-card" style="margin: 0;">
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
               <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> CREATE: MAIN PLAYLIST <<<</h3>
             </div>
@@ -1562,7 +1564,7 @@
           </div>
 
           <!-- Outro Playlist Section -->
-          <div class="card" id="outro-playlist-card">
+          <div class="card" id="outro-playlist-card" style="margin: 0;">
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
               <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> CREATE: OUTRO PLAYLIST <<<</h3>
             </div>
@@ -1580,7 +1582,7 @@
               <button id="btn-clear-outro" class="btn btn--danger btn--sm">Clear Outro</button>
             </div>
           </div>
-
+          </div> <!-- /horizontal-playlist-container -->
         </div>
         <!-- /create-sub-playlist -->
 

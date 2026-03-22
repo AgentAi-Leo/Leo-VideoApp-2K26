@@ -1,21 +1,23 @@
-# Phase 2: Create UI Cleanup Plan (vers-O)
+# Phase 3: Horizontal Layout Architecture (vers-P)
 
 ## Core Objective
-Now that the three-tiered sequence (Intro -> Main -> Outro) is fully synchronized and operational, the secondary workspace structure needs to be cleaned up for long-term scalability. The current Create navigation tab hosts multiple separate input and list cards linearly stacked. The goal of this phase is to refine the styling, spacing, grouping, and interaction models of the `#panel-create` layout to modernize the user experience.
+The user has requested the `CREATE UI` be drastically minimized by transitioning from the `vers-O` Vertical Stack pattern into a **Horizontally Stacked** paradigm. This means laying out the `Intro Workspace`, `Main Workspace`, and `Outro Workspace` side-by-side rather than top-to-bottom.
 
 ## User Review Required
 > [!NOTE]
-> **Pending User Direction**
-> The user stated: "CLEAN UP CREATE UI". I am officially awaiting clarification on exactly what the user intends for this cleanup before generating the detailed changes. Specifically:
-> 1. Which visual paradigms (collapsibles, spacing, merging input panels with list displays) does the user favor?
-> 2. Are there specific style references or UX layouts the user wants to mimic?
+> Ensure the user signs off on the layout mechanics before execution.
 
 ## Proposed Changes
 
-### Workspace Aggregation
-- **Merge Component Cards:** The 6 separated DOM cards (3 Add blocks + 3 List blocks) will be structurally condensed into exactly 3 universal workspace cards. 
-- The `#add-[target]-card` HTML elements will be stripped of their outer container and injected directly above the `<ul>` inside their `#target-playlist-card`. 
-- This reduces the visual footprint of the Create tab by 50% and localizes the contextual focus per playlist type.
+### CSS Layout Shifts
+- Apply `display: grid` or `display: flex` with wrap support to the `#create-sub-playlist` container.
+- Establish a responsive threshold (e.g. `minmax(320px, 1fr)`) so that the cards scale down into a vertical stack safely on mobile devices but display perfectly 3-wide horizontally on desktop monitors.
+
+## Verification Plan
+### Automated Tests
+- N/A
+### Manual Verification
+- Visual inspection of column wrapping and resize behavior.
 
 ## Verification Plan
 ### Automated Tests
