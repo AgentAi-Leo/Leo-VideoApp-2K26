@@ -928,8 +928,8 @@
     .playlist-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
+      gap: 16px;
+      padding: 18px 20px;
       background: var(--bg-3);
       border: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: var(--r-md);
@@ -954,7 +954,7 @@
       cursor: grab;
     }
 
-    .playlist-item__drag svg { width: 18px; height: 18px; }
+    .playlist-item__drag svg { width: 24px; height: 24px; }
 
     .playlist-item__info {
       flex: 1;
@@ -963,17 +963,18 @@
 
     .playlist-item__title {
       display: block;
-      font-size: 0.85rem;
-      font-weight: 600;
+      font-size: 1.15rem;
+      font-weight: 700;
       color: var(--text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      margin-bottom: 2px;
     }
 
     .playlist-item__url {
       display: block;
-      font-size: 0.72rem;
+      font-size: 0.95rem;
       color: #8c8cc4;
       white-space: nowrap;
       overflow: hidden;
@@ -988,7 +989,7 @@
     }
 
     .playlist-item__remove:hover { color: #ff0000; opacity: 1; }
-    .playlist-item__remove svg   { width: 18px; height: 18px; }
+    .playlist-item__remove svg   { width: 24px; height: 24px; }
 
     .playlist-empty {
       text-align: center;
