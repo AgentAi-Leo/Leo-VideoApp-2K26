@@ -3067,10 +3067,10 @@
       li.addEventListener('drop',      dndDrop);
       li.addEventListener('dragend',   dndEnd);
 
-      const urlSpan = li.querySelector('.playlist-item__url');
-      if (urlSpan) {
-        urlSpan.addEventListener('mouseenter', e => HoverPreview.show(item.url, e));
-        urlSpan.addEventListener('mouseleave', () => HoverPreview.hide());
+      const infoSpan = li.querySelector('.playlist-item__info');
+      if (infoSpan) {
+        infoSpan.addEventListener('mouseenter', e => HoverPreview.show(item.url, e));
+        infoSpan.addEventListener('mouseleave', () => HoverPreview.hide());
       }
 
       li.querySelector('.playlist-item__drag')
