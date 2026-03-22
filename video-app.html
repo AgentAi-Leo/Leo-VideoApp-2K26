@@ -2171,6 +2171,19 @@
     DOM.video.style.display        = type === 'native'  ? 'block' : 'none';
     DOM.ytPlayerDiv.style.display  = type === 'youtube' ? 'block' : 'none';
     DOM.vmPlayer.style.display     = type === 'vimeo'   ? 'block' : 'none';
+    
+    // Conditionally show custom AirPlay button only for native HTML5 video tracks
+    const btnAirplay = document.getElementById('btn-airplay');
+    if (btnAirplay) {
+      if (type !== 'native') {
+        btnAirplay.style.display = 'none';
+      } else {
+        // If native, rely on the global attribute flag tracking actual Apple TV hardware availability
+        if (window._airplayDeviceAvailable) {
+          btnAirplay.style.display = 'inline-flex';
+        }
+      }
+    }
   }
 
 
@@ -2862,10 +2875,12 @@
      AIRPLAY
   ═══════════════════════════════════════════════════════ */
   const btnAirplay = $('btn-airplay');
+  window._airplayDeviceAvailable = false; // Trust global flag
   
   if (window.WebKitPlaybackTargetAvailabilityEvent) {
     DOM.video.addEventListener('webkitplaybacktargetavailabilitychanged', e => {
-      if (e.availability === 'available') {
+      window._airplayDeviceAvailable = (e.availability === 'available');
+      if (AP.type === 'native' && window._airplayDeviceAvailable) {
         btnAirplay.style.display = 'inline-flex';
       } else {
         btnAirplay.style.display = 'none';
