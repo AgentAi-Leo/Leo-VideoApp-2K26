@@ -1,8 +1,9 @@
-# Video Preview Tooltip Implementation
+# Three-Tiered Multi-Playlist Architecture
 
-[x] Design and append the global `preview-tooltip` container to the DOM.
-[x] Implement CSS for the floating tooltip (absolute positioning, hidden by default).
-[x] Build logic to resolve the media URL into an iframe (YouTube/Vimeo) or native video element payload.
-[x] Create mouseenter/mouseleave listeners on playlist items and the intro item.
-[x] Implement the mouse tracking logic to tether the tooltip's coordinates to the cursor.
-[x] Add the 15-second auto-teardown logic to clear the iframe and explicitly pause/stop the preview after 15 seconds.
+- [x] Write implementation plan and review with user.
+- [x] Refactor Data State Arrays & Local Storage mappings (JS).
+- [x] Duplicate and rebuild `#intro-card` HTML layout to list schema.
+- [x] Construct and wire `#outro-card` list HTML layout structurally identical to main.
+- [x] Refactor the Javascript `.render()` and `.add()` pipeline to generate DOM code DRYly.
+- [x] Wire SortableJS Drag & Drop event bindings uniformly across all 3 HTML UI lists.
+- [x] Rewrite the `playNextVideo` sequence queue pipeline logic to sequentially jump between array boundaries.

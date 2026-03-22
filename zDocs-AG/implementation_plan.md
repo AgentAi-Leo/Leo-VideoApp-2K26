@@ -1,34 +1,37 @@
-# Hover Video Preview Tooltip Plan
+# Multi-Playlist Architecture Overhaul Plan
 
 ## Core Objective
-Implement a dynamic 15-second visual preview window that appears when users hover their mouse over items in the Playlist queue or over the active Intro video on the Create tab.
+Upgrade the single-video "Intro" feature into a fully functional **Intro Playlist**, and introduce an identical **Outro Playlist**. This transforms the app from a [Single Intro -> Main Playlist] sequence into a three-tiered pipeline: [Intro Playlist -> Main Playlist -> Outro Playlist].
 
 ## Proposed Changes
 
-### UI & Styling Updates
-- Inject a hidden, floating `div id="hover-preview-container"` globally into the `document.body`.
-- Add CSS to absolutely position this container (`position: fixed`, `z-index: 9999`) and fix its dimensions to a clean rectangular aspect ratio (e.g., `width: 240px; height: 135px;`).
-- Add glassmorphism or a dark background to the container, with `pointer-events: none` so it elegantly floats under the cursor without disrupting interactive flow.
+### State & Storage Mapping
+- **Modify** `State.introVideo` (Object) -> `State.introPlaylist` (Array of objects).
+- **Add** `State.outroPlaylist` (Array of objects).
+- **Add** LocalStorage keys `vapp_intro_playlist` and `vapp_outro_playlist`.
 
-### Event Tracking & Positioning Logic
-- Attach event delegation to `#panel-create` to listen for `mouseenter`, `mousemove`, and `mouseleave` over components matching `.playlist-item` or `#intro-preview`.
-- **Mouseenter:** Wait for a short 400ms delay to prevent accidental flashes while scrolling rapidly. Once triggered, capture the embedded URL.
-- **Mousemove:** Dynamically update the container's `left` and `top` properties to rigidly trail the cursor coordinates, offsetting slightly down and right (+15px) so the mouse doesn't cover the video. Ensure collision mapping so it never bleeds off-screen.
-- **Mouseleave:** Instantly tear down the preview and conceal the container.
+### Component Duplication (HTML)
+- **Intro Card:** Refactor `#intro-card` to match `#playlist-card`. Replace the single-preview block with a dynamic `<ul id="intro-list">` container. Ensure "Add Setup" has its own `Add to Intro Playlist` button.
+- **Outro Card:** Duplicate the HTML structure of the `#playlist-card` and place it entirely below the Main Playlist. Give it `<ul id="outro-list">`.
+- **Add Form Integrations:** Instead of a single "Set Intro" button overriding the solitary item, transition "Add to Intro" and "Add to Outro" to push objects into their respective state arrays and re-render.
 
-### Dynamic Video Payload Resolution
-- Map the extracted item URL to its correct rendering payload:
-  - **YouTube:** `<iframe src="https://www.youtube.com/embed/[ID]?autoplay=1&mute=1&controls=0&modestbranding=1" ...>`
-  - **Vimeo:** `<iframe src="https://player.vimeo.com/video/[ID]?autoplay=1&muted=1&background=1" ...>`
-  - **Native (MP4/WEBM):** `<video src="[URL]" autoplay muted loop style="object-fit:cover;">`
-- Inject the resolved payload directly into the preview container.
+### JavaScript Logic (DOM & Rendering)
+- Break out the hardcoded `renderPlaylist()` function into a generic `renderList(array, containerId, templateType)` to allow DRY rendering of the Intro, Main, and Outro lists cleanly.
+- Duplicate the `SortableJS` initialization loop to independently attach drag-and-drop mechanics to `#intro-list`, `#playlist-list`, and `#outro-list`.
+- Ensure item deletions (`removeItem`) can target the specific array safely (Intro, Main, or Outro).
 
-### 15-Second Teardown Circuit
-- The moment the payload is injected, start a strict 15-second (`15000ms`) shutdown timer.
-- Once 15 seconds collapse, forcibly wipe the floating container's innerHTML (terminating all video streams instantly) and hide the block, exactly fulfilling the 15-second constraint.
+### Playback Queue Modification
+- **Video Player State Machine:** Refactor the `playNextVideo()` iterator. It currently expects `[Intro, Playlist]`. It must be rewritten to sequentially exhaust the arrays:
+  1. Iterate through `State.introPlaylist` until end.
+  2. Transition to `State.playlist` and iterate until end.
+  3. Transition to `State.outroPlaylist` and iterate until end.
+  4. Yield EOF or loop the entire super-sequence if `Loop` is enabled.
+- Ensure the "PREVIEW / PLAY" button triggers the exact first video in the highest available populated array.
 
 ## Verification Plan
-1. Hover over a YouTube link in the playlist; verify the preview iframe spins up silently and auto-plays.
-2. Confirm the floating module cleanly follows mouse coordinates.
-3. Keep hovering for 15 seconds; confirm the player forcefully terminates precisely at the time limit.
-4. Drag mouse away; verify instantaneous teardown.
+### Automated Tests
+- Validate DOM arrays inject correctly independently of each other.
+### Manual Verification
+1. Add 2 videos to Intro, 2 to Main, 2 to Outro. 
+2. Play the first video and aggressively skip forward to ensure the state machine perfectly transitions boundary lines sequentially without crashing.
+3. Drag and drop items internally within the Outro playlist and verify state persists on reload.

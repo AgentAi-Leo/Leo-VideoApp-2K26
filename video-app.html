@@ -1487,36 +1487,27 @@
             </button>
             <button id="btn-clear-all" class="btn btn--danger">CLEAR ALL</button>
           </div>
-          <!-- Intro Video setter -->
-          <div class="card" id="intro-card">
+          <!-- Add Video to Intro Playlist -->
+          <div class="card" id="add-intro-card">
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
-              <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> INTRO VIDEO <<<</h3>
+              <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> * INTRO PLAYLIST * <<<</h3>
             </div>
-            <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays first, before your playlist.</p>
-
-            <!-- Intro preview row -->
-            <div id="intro-preview" class="intro-preview" aria-live="polite"></div>
+            <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays first, before your main playlist.</p>
 
             <div class="input-group">
-              <input
-                id="intro-url"
-                class="text-input"
-                type="url"
-                placeholder="YouTube, Vimeo, or direct video URL…"
-                inputmode="url"
-                autocomplete="off"
-              />
-              <input
-                id="intro-title"
-                class="text-input"
-                type="text"
-                placeholder="Title (optional)"
-                autocomplete="off"
-              />
+              <input id="intro-url" class="text-input" type="url" placeholder="YouTube, Vimeo, or direct video URL…" inputmode="url" autocomplete="off" />
+              <input id="intro-title" class="text-input" type="text" placeholder="Title (optional)" autocomplete="off" />
             </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-              <button id="btn-set-intro" class="btn btn--primary">Set Intro</button>
-              <button id="btn-clear-intro" class="btn btn--danger btn--sm">Clear</button>
+            <button id="btn-add-intro" class="btn btn--primary">Add to Intro Playlist</button>
+          </div>
+
+          <!-- Intro Playlist List -->
+          <div class="card" id="intro-playlist-card">
+            <h3 class="card-title">Intro Playlist <span id="intro-count" class="badge">0</span></h3>
+            <ul id="intro-list" class="playlist-list" aria-label="Intro Playlist items" role="list"></ul>
+            <div id="intro-empty" class="playlist-empty" aria-live="polite">No videos yet. Add one above.</div>
+            <div style="display:flex;align-items:center;justify-content:flex-start;margin-top:1rem">
+              <button id="btn-clear-intro" class="btn btn--danger btn--sm">Clear Intro</button>
             </div>
           </div>
 
@@ -1577,6 +1568,30 @@
                 </button>
                 <span style="font-size:0.78rem;color:var(--text-2);letter-spacing:0.05em;font-weight:600">LOOP</span>
               </div>
+            </div>
+          </div>
+
+          <!-- Add Video to Outro Playlist -->
+          <div class="card" id="add-outro-card">
+            <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
+              <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> * OUTRO PLAYLIST * <<<</h3>
+            </div>
+            <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays last, after your main playlist.</p>
+
+            <div class="input-group">
+              <input id="outro-url" class="text-input" type="url" placeholder="YouTube, Vimeo, or direct video URL…" inputmode="url" autocomplete="off" />
+              <input id="outro-title" class="text-input" type="text" placeholder="Title (optional)" autocomplete="off" />
+            </div>
+            <button id="btn-add-outro" class="btn btn--primary">Add to Outro Playlist</button>
+          </div>
+
+          <!-- Outro Playlist List -->
+          <div class="card" id="outro-playlist-card">
+            <h3 class="card-title">Outro Playlist <span id="outro-count" class="badge">0</span></h3>
+            <ul id="outro-list" class="playlist-list" aria-label="Outro Playlist items" role="list"></ul>
+            <div id="outro-empty" class="playlist-empty" aria-live="polite">No videos yet. Add one above.</div>
+            <div style="display:flex;align-items:center;justify-content:flex-start;margin-top:1rem">
+              <button id="btn-clear-outro" class="btn btn--danger btn--sm">Clear Outro</button>
             </div>
           </div>
 
@@ -1734,8 +1749,9 @@
      STATE — single source of truth
   ═══════════════════════════════════════════════════════ */
   const State = {
+    introPlaylist:   [],          // [{ url, title }]
     playlist:        [],          // [{ url, title }]
-    introVideo:      null,        // { url, title } | null
+    outroPlaylist:   [],          // [{ url, title }]
     aboutText:       '',          // editable about/story text
     currentIndex:    -1,          // index into full queue (intro=0, then playlist)
     loop:            false,       // loop playlist when it ends
@@ -1753,8 +1769,9 @@
      STORAGE — localStorage wrapper
   ═══════════════════════════════════════════════════════ */
   const Storage = {
+    KEY_INTRO:    'vapp_intro_playlist',
     KEY_PLAYLIST: 'vapp_playlist',
-    KEY_INTRO:    'vapp_intro',
+    KEY_OUTRO:    'vapp_outro_playlist',
     KEY_ABOUT:    'vapp_about',
     KEY_LOOP:     'vapp_loop',
     KEY_SPEEDS:   'vapp_speeds',
@@ -1762,18 +1779,20 @@
 
     load() {
       try {
-        State.playlist    = JSON.parse(localStorage.getItem(this.KEY_PLAYLIST) || '[]');
-        State.introVideo  = JSON.parse(localStorage.getItem(this.KEY_INTRO) || 'null');
-        State.aboutText   = localStorage.getItem(this.KEY_ABOUT) || '';
-        State.loop        = localStorage.getItem(this.KEY_LOOP) === 'true';
-        State.videoSpeeds = JSON.parse(localStorage.getItem(this.KEY_SPEEDS) || '{}');
-        State.blackGap    = localStorage.getItem(this.KEY_BLACKGAP) === 'true';
-      } catch { State.playlist = []; State.introVideo = null; State.aboutText = ''; State.loop = false; State.videoSpeeds = {}; State.blackGap = false; }
+        State.introPlaylist = JSON.parse(localStorage.getItem(this.KEY_INTRO) || '[]');
+        State.playlist      = JSON.parse(localStorage.getItem(this.KEY_PLAYLIST) || '[]');
+        State.outroPlaylist = JSON.parse(localStorage.getItem(this.KEY_OUTRO) || '[]');
+        State.aboutText     = localStorage.getItem(this.KEY_ABOUT) || '';
+        State.loop          = localStorage.getItem(this.KEY_LOOP) === 'true';
+        State.videoSpeeds   = JSON.parse(localStorage.getItem(this.KEY_SPEEDS) || '{}');
+        State.blackGap      = localStorage.getItem(this.KEY_BLACKGAP) === 'true';
+      } catch { State.introPlaylist = []; State.playlist = []; State.outroPlaylist = []; State.aboutText = ''; State.loop = false; State.videoSpeeds = {}; State.blackGap = false; }
     },
 
     save() {
+      localStorage.setItem(this.KEY_INTRO,    JSON.stringify(State.introPlaylist));
       localStorage.setItem(this.KEY_PLAYLIST, JSON.stringify(State.playlist));
-      localStorage.setItem(this.KEY_INTRO,    JSON.stringify(State.introVideo));
+      localStorage.setItem(this.KEY_OUTRO,    JSON.stringify(State.outroPlaylist));
       localStorage.setItem(this.KEY_ABOUT,    State.aboutText);
       localStorage.setItem(this.KEY_LOOP,     State.loop);
       localStorage.setItem(this.KEY_SPEEDS,   JSON.stringify(State.videoSpeeds));
@@ -2367,8 +2386,9 @@
   ═══════════════════════════════════════════════════════ */
   function buildQueue() {
     const q = [];
-    if (State.introVideo?.url) q.push(State.introVideo);
+    q.push(...State.introPlaylist.filter(v => v?.url));
     q.push(...State.playlist.filter(v => v?.url));
+    q.push(...State.outroPlaylist.filter(v => v?.url));
     return q;
   }
 
@@ -2479,8 +2499,8 @@
     }
   }
 
-  // First playlist index — 1 if intro exists, else 0
-  function firstPlaylistIdx() { return State.introVideo?.url ? 1 : 0; }
+  // First playlist index — resolves offset over intro sequences
+  function firstPlaylistIdx() { return State.introPlaylist.filter(v => v?.url).length; }
 
   // Show 1s black screen between videos when blackGap is enabled
   const blackOverlay = document.getElementById('black-overlay');
@@ -2889,9 +2909,12 @@
   const CRE = {
     introUrl:     $('intro-url'),
     introTitle:   $('intro-title'),
-    btnSetIntro:   $('btn-set-intro'),
-    btnClearIntro: $('btn-clear-intro'),
-    introPreview:  $('intro-preview'),
+    btnAddIntro:  $('btn-add-intro'),
+    btnClearIntro:$('btn-clear-intro'),
+    introList:    $('intro-list'),
+    introCount:   $('intro-count'),
+    introEmpty:   $('intro-empty'),
+    
     addUrl:       $('add-url'),
     addTitle:     $('add-title'),
     btnAdd:       $('btn-add-video'),
@@ -2899,15 +2922,26 @@
     count:        $('playlist-count'),
     empty:        $('playlist-empty'),
     btnClear:     $('btn-clear-playlist'),
+
+    outroUrl:     $('outro-url'),
+    outroTitle:   $('outro-title'),
+    btnAddOutro:  $('btn-add-outro'),
+    btnClearOutro:$('btn-clear-outro'),
+    outroList:    $('outro-list'),
+    outroCount:   $('outro-count'),
+    outroEmpty:   $('outro-empty'),
   };
 
   // Static binding for intro preview tooltips attached to the input field
-  CRE.introUrl.addEventListener('mouseenter', e => {
-    const url = CRE.introUrl.value.trim();
-    if (url) HoverPreview.show(url, e);
+  [CRE.introUrl, CRE.addUrl, CRE.outroUrl].forEach(inputEl => {
+    if (!inputEl) return;
+    inputEl.addEventListener('mouseenter', e => {
+      const url = inputEl.value.trim();
+      if (url) HoverPreview.show(url, e);
+    });
+    inputEl.addEventListener('mouseleave', () => HoverPreview.hide());
+    inputEl.addEventListener('mousemove', e => HoverPreview.setPosition(e));
   });
-  CRE.introUrl.addEventListener('mouseleave', () => HoverPreview.hide());
-  CRE.introUrl.addEventListener('mousemove', e => HoverPreview.setPosition(e));
 
   /* ── HTML escape (XSS safety) ── */
   function esc(str) {
@@ -2927,31 +2961,30 @@
   }
 
   /* ═══════════════════════════════════════════════════════
-     RENDER — intro preview
+     RENDER — playlists
   ═══════════════════════════════════════════════════════ */
-  function renderIntroPreview() {
-    const intro = State.introVideo;
-    if (intro?.url) {
-      CRE.introPreview.innerHTML =
-        `<span class="intro-dot"></span>${platformTag(intro.url)}<span style="font-size:1rem; color:var(--text);">${esc(intro.title || intro.url)}</span>`;
-    } else {
-      CRE.introPreview.innerHTML = '';
-    }
+  function getListDefs() {
+    return [
+      { key: 'intro', list: State.introPlaylist, domList: CRE.introList, domCount: CRE.introCount, domEmpty: CRE.introEmpty },
+      { key: 'main',  list: State.playlist,      domList: CRE.list,      domCount: CRE.count,      domEmpty: CRE.empty },
+      { key: 'outro', list: State.outroPlaylist, domList: CRE.outroList, domCount: CRE.outroCount, domEmpty: CRE.outroEmpty }
+    ];
   }
 
-  /* ═══════════════════════════════════════════════════════
-     RENDER — playlist list
-  ═══════════════════════════════════════════════════════ */
-  function renderPlaylist() {
-    const list = State.playlist;
-    CRE.count.textContent   = list.length;
-    CRE.empty.style.display = list.length === 0 ? '' : 'none';
-    CRE.list.innerHTML      = '';
+  function renderAllLists() {
+    getListDefs().forEach(def => renderList(def.key, def.list, def.domList, def.domCount, def.domEmpty));
+  }
 
-    list.forEach((item, i) => {
+  function renderList(listKey, listArray, domList, domCount, domEmpty) {
+    domCount.textContent   = listArray.length;
+    domEmpty.style.display = listArray.length === 0 ? '' : 'none';
+    domList.innerHTML      = '';
+
+    listArray.forEach((item, i) => {
       const li = document.createElement('li');
       li.className     = 'playlist-item';
       li.dataset.index = i;
+      li.dataset.listKey = listKey;
       li.draggable     = true;
       li.innerHTML = `
         <span class="playlist-item__drag" aria-hidden="true">
@@ -2977,7 +3010,7 @@
         </button>`;
 
       li.querySelector('.playlist-item__remove')
-        .addEventListener('click', e => { e.stopPropagation(); removeVideo(i); });
+        .addEventListener('click', e => { e.stopPropagation(); removeVideo(listKey, i); });
 
       li.addEventListener('dragstart', dndStart);
       li.addEventListener('dragover',  dndOver);
@@ -2995,64 +3028,63 @@
       li.querySelector('.playlist-item__drag')
         .addEventListener('touchstart', touchDragStart, { passive: true });
 
-      CRE.list.appendChild(li);
+      domList.appendChild(li);
     });
   }
 
   /* ═══════════════════════════════════════════════════════
      PLAYLIST MUTATIONS
   ═══════════════════════════════════════════════════════ */
-  function addVideo(url, title) {
+  function addVideoTo(listKey, url, title) {
     url = url.trim();
     if (!url)             { showToast('Enter a video URL'); return false; }
     if (!isValidUrl(url)) { showToast('Invalid URL — check and retry'); return false; }
     const item = { url, title: title.trim(), creator: '' };
-    State.playlist.push(item);
-    Storage.save(); renderPlaylist(); updateHomeEmptyState();
-    showToast('✓ Added to playlist');
-    // Fetch creator in background and persist
+    
+    const targetArr = getListDefs().find(d => d.key === listKey).list;
+    targetArr.push(item);
+    
+    Storage.save(); renderAllLists(); updateHomeEmptyState();
+    showToast(`✓ Added to list`);
+    
     fetchVideoCreator(url).then(c => { if (c) { item.creator = c; Storage.save(); } });
     return true;
   }
 
-  function removeVideo(index) {
-    State.playlist.splice(index, 1);
-    if (State.currentIndex > 0 && index < State.currentIndex) State.currentIndex--;
-    Storage.save(); renderPlaylist(); updateHomeEmptyState();
+  function removeVideo(listKey, index) {
+    const targetArr = getListDefs().find(d => d.key === listKey).list;
+    targetArr.splice(index, 1);
+    Storage.save(); renderAllLists(); updateHomeEmptyState();
     showToast('Removed');
   }
 
-  function setIntroVideo(url, title) {
-    url = url.trim();
-    if (!url)             { showToast('Enter a URL'); return; }
-    if (!isValidUrl(url)) { showToast('Invalid URL'); return; }
-    State.introVideo = { url, title: title.trim(), creator: '' };
-    Storage.save(); renderIntroPreview(); updateHomeEmptyState();
-    showToast('✓ Intro video set');
-    // Fetch creator in background and persist
-    fetchVideoCreator(url).then(c => { if (c) { State.introVideo.creator = c; Storage.save(); } });
+  function clearSpecificPlaylist(listKey) {
+    const def = getListDefs().find(d => d.key === listKey);
+    def.list.splice(0, def.list.length);
+    Storage.save(); renderAllLists(); updateHomeEmptyState();
+    showToast('Playlist cleared');
   }
 
-  function clearPlaylist() {
-    if (State.playlist.length === 0 && !State.introVideo) return;
+  function clearAllPlaylists() {
     cancelGap();
     AP.destroy();
     showPlayerType('native');
-    State.playlist   = [];
-    State.introVideo = null;
+    State.introPlaylist = [];
+    State.playlist = [];
+    State.outroPlaylist = [];
     State.currentIndex = -1;
-    Storage.save(); renderPlaylist(); renderIntroPreview(); updateHomeEmptyState();
-    CRE.introUrl.value = ''; CRE.introTitle.value = '';
-    showToast('Playlist cleared');
+    Storage.save(); renderAllLists(); updateHomeEmptyState();
   }
 
   /* ═══════════════════════════════════════════════════════
      DESKTOP DRAG-AND-DROP
   ═══════════════════════════════════════════════════════ */
-  let dndSrc = null;
+  let dndSrcIdx = null;
+  let dndSrcKey = null;
 
   function dndStart(e) {
-    dndSrc = parseInt(this.dataset.index);
+    dndSrcIdx = parseInt(this.dataset.index);
+    dndSrcKey = this.dataset.listKey;
     this.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
   }
@@ -3065,25 +3097,31 @@
   function dndDrop(e) {
     e.preventDefault();
     this.classList.remove('drag-over');
-    const dst = parseInt(this.dataset.index);
-    if (dndSrc === null || dndSrc === dst) return;
-    State.playlist.splice(dst, 0, State.playlist.splice(dndSrc, 1)[0]);
-    Storage.save(); renderPlaylist();
+    const dstIdx = parseInt(this.dataset.index);
+    const dstKey = this.dataset.listKey;
+    
+    if (dndSrcIdx === null || dndSrcKey !== dstKey || dndSrcIdx === dstIdx) return;
+    
+    const targetArr = getListDefs().find(d => d.key === dstKey).list;
+    targetArr.splice(dstIdx, 0, targetArr.splice(dndSrcIdx, 1)[0]);
+    
+    Storage.save(); renderAllLists();
   }
   function dndEnd() {
     this.classList.remove('dragging');
-    dndSrc = null;
-    CRE.list.querySelectorAll('.playlist-item').forEach(el => el.classList.remove('drag-over','dragging'));
+    dndSrcIdx = null; dndSrcKey = null;
+    document.querySelectorAll('.playlist-item').forEach(el => el.classList.remove('drag-over','dragging'));
   }
 
   /* ═══════════════════════════════════════════════════════
      MOBILE TOUCH DRAG-AND-DROP
   ═══════════════════════════════════════════════════════ */
-  let tdEl=null, tdIdx=null, tdClone=null, tdOffY=0;
+  let tdEl=null, tdIdx=null, tdKey=null, tdClone=null, tdOffY=0;
 
   function touchDragStart(e) {
     tdEl  = this.closest('.playlist-item');
     tdIdx = parseInt(tdEl.dataset.index);
+    tdKey = tdEl.dataset.listKey;
     const t = e.touches[0], r = tdEl.getBoundingClientRect();
     tdOffY  = t.clientY - r.top;
 
@@ -3110,7 +3148,7 @@
     const hit    = document.elementFromPoint(t.clientX, t.clientY);
     tdClone.style.display = '';
     const target = hit?.closest('.playlist-item');
-    CRE.list.querySelectorAll('.playlist-item')
+    document.querySelectorAll('.playlist-item')
       .forEach(item => item.classList.toggle('drag-over', item === target && item !== tdEl));
   }
 
@@ -3126,28 +3164,28 @@
 
     if (target && target !== tdEl) {
       const dstIdx = parseInt(target.dataset.index);
-      State.playlist.splice(dstIdx, 0, State.playlist.splice(tdIdx, 1)[0]);
-      Storage.save();
+      const dstKey = target.dataset.listKey;
+      if (tdKey === dstKey && tdIdx !== dstIdx) {
+        const targetArr = getListDefs().find(d => d.key === dstKey).list;
+        targetArr.splice(dstIdx, 0, targetArr.splice(tdIdx, 1)[0]);
+        Storage.save();
+      }
     }
-    tdEl = tdIdx = null;
-    renderPlaylist();
+    tdEl = tdIdx = tdKey = null;
+    renderAllLists();
   }
 
   /* ═══════════════════════════════════════════════════════
      CREATE TAB — BUTTON WIRING
   ═══════════════════════════════════════════════════════ */
-  CRE.btnSetIntro.addEventListener('click', () => {
-    setIntroVideo(CRE.introUrl.value, CRE.introTitle.value);
+  CRE.btnAddIntro.addEventListener('click', () => {
+    if (addVideoTo('intro', CRE.introUrl.value, CRE.introTitle.value)) {
+      CRE.introUrl.value = ''; CRE.introTitle.value = ''; CRE.introUrl.focus();
+    }
   });
 
   CRE.btnClearIntro.addEventListener('click', () => {
-    State.introVideo = null;
-    CRE.introUrl.value   = '';
-    CRE.introTitle.value = '';
-    Storage.save();
-    renderIntroPreview();
-    updateHomeEmptyState();
-    showToast('Intro cleared');
+    if (confirm('Clear Intro Playlist?')) clearSpecificPlaylist('intro');
   });
 
   CRE.introUrl.addEventListener('keydown', e => {
@@ -3155,12 +3193,13 @@
   });
   CRE.introUrl.addEventListener('blur', () => autoFillTitle(CRE.introUrl, CRE.introTitle));
   CRE.introTitle.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); CRE.btnSetIntro.click(); }
+    if (e.key === 'Enter') { e.preventDefault(); CRE.btnAddIntro.click(); }
   });
 
   CRE.btnAdd.addEventListener('click', () => {
-    const ok = addVideo(CRE.addUrl.value, CRE.addTitle.value);
-    if (ok) { CRE.addUrl.value = ''; CRE.addTitle.value = ''; CRE.addUrl.focus(); }
+    if (addVideoTo('main', CRE.addUrl.value, CRE.addTitle.value)) {
+      CRE.addUrl.value = ''; CRE.addTitle.value = ''; CRE.addUrl.focus();
+    }
   });
 
   CRE.addUrl.addEventListener('keydown', e => {
@@ -3171,34 +3210,43 @@
     if (e.key === 'Enter') { e.preventDefault(); CRE.btnAdd.click(); }
   });
 
+  CRE.btnAddOutro.addEventListener('click', () => {
+    if (addVideoTo('outro', CRE.outroUrl.value, CRE.outroTitle.value)) {
+      CRE.outroUrl.value = ''; CRE.outroTitle.value = ''; CRE.outroUrl.focus();
+    }
+  });
+
+  CRE.btnClearOutro.addEventListener('click', () => {
+    if (confirm('Clear Outro Playlist?')) clearSpecificPlaylist('outro');
+  });
+
+  CRE.outroUrl.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); CRE.outroTitle.focus(); }
+  });
+  CRE.outroUrl.addEventListener('blur', () => autoFillTitle(CRE.outroUrl, CRE.outroTitle));
+  CRE.outroTitle.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); CRE.btnAddOutro.click(); }
+  });
+
   CRE.btnClear.addEventListener('click', () => {
-    if (confirm('Clear all videos and intro?')) clearPlaylist();
+    if (confirm('Clear Main Playlist?')) clearSpecificPlaylist('main');
   });
 
   // PREVIEW — restart from top and switch to Home
   $('btn-preview').addEventListener('click', () => {
     const queue = buildQueue();
     if (queue.length === 0) { showToast('Add videos first'); return; }
-    cancelGap(); // cancel any pending transition before restarting
-    
-    // Reset all global playback speeds back to 1x
-    State.videoSpeeds = {};
-    Storage.save();
-    
-    switchTab('home');
-    loadVideo(0, false); // user-initiated → will show controls on start
+    cancelGap();
+    State.videoSpeeds = {}; Storage.save();
+    switchTab('home'); loadVideo(0, false);
   });
 
   // ABOUT PREVIEW — switch to About tab
-  $('btn-about-preview').addEventListener('click', () => {
-    switchTab('about');
-  });
+  $('btn-about-preview').addEventListener('click', () => { switchTab('about'); });
 
-  // CLEAR ALL — wipe playlist, intro, and about text
+  // CLEAR ALL — wipe everywhere
   function clearAll() {
-    State.playlist    = [];
-    State.introVideo  = null;
-    State.currentIndex = -1;
+    clearAllPlaylists();
     State.aboutText   = '';
     State.loop        = false;
     State.blackGap    = false;
@@ -3206,12 +3254,13 @@
     $('about-text').value = '';
     CRE.introUrl.value    = '';
     CRE.introTitle.value  = '';
+    CRE.addUrl.value      = '';
+    CRE.addTitle.value    = '';
+    CRE.outroUrl.value    = '';
+    CRE.outroTitle.value  = '';
     $('chk-black-gap').checked = false;
     updateLoopBtn();
     renderAboutDisplay();
-    renderPlaylist();
-    renderIntroPreview();
-    updateHomeEmptyState();
     showToast('Everything cleared');
   }
   $('btn-clear-all').addEventListener('click', clearAll);
