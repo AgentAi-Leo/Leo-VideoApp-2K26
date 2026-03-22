@@ -102,7 +102,8 @@ ADDS vers-L
   ADDS vers-R 
    - Everything is AWESOME But VIDEO PLAYLISTS Are Too Small
    - Make Playlist Items Larger
-   - - LOOKS & WORKS AWESOME - GREAT SIZE!!! 
+   - LOOKS & WORKS AWESOME - GREAT SIZE (ONLY IN ZEN FIREFOX)!!! 
+
    
 
 
