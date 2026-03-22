@@ -15,7 +15,8 @@ Instead of rigid pagination, we implement a **Fixed-Height Scrollable Container*
 3. Design a custom Webkit scrollbar (matching the purple/dark glassmorphism theme) so it renders as a premium, native element rather than a clunky default grey browser scrollbar.
 4. Scale all three terminal "Clear" action strings completely natively to `100% width` directly mirroring the volumetric visual weight of the master action nodes.
 5. Symmetrically untether the 3 `.btn--primary` Add configuration buttons from the `.card` flex-stretch bindings by injecting `align-self: center`. This forces them down to match the exact auto-width constraints and baseline typography scale as the core `PLAY` button.
-6. Ensure SortableJS drag-and-drop auto-scrolls the container when pulling a list item toward the top or bottom boundaries.
+6. Systematically inflate the `.horizontal-playlist-container` baseline CSS grid logic from `minmax(320px, 1fr)` strictly out to `minmax(400px, 1fr)` natively expanding the physical rendering bounds of all three playlist cards by exactly 25% for superior content legibility.
+7. Ensure SortableJS drag-and-drop auto-scrolls the container when pulling a list item toward the top or bottom boundaries.
 
 ## User Review Required
 > [!IMPORTANT]
