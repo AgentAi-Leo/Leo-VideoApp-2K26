@@ -3,7 +3,7 @@ import SwiftUI
 /// Playlist browser — shows all videos, lets user tap to start playback
 struct PlaylistBrowserView: View {
     @ObservedObject var service: PlaylistService
-    let onPlay: () -> Void
+    let onPlay: (Int) -> Void    // passes the selected index
 
     @State private var selectedIndex: Int = 0
     @FocusState private var focusedItem: UUID?
@@ -31,8 +31,8 @@ struct PlaylistBrowserView: View {
                         .font(.callout)
                 }
 
-                // Play All button
-                Button(action: onPlay) {
+                // Play All button (starts from index 0)
+                Button(action: { onPlay(0) }) {
                     Label("Play All", systemImage: "play.fill")
                         .font(.callout)
                         .padding(.horizontal, 20)
@@ -77,16 +77,17 @@ struct PlaylistBrowserView: View {
                 ScrollView {
                     LazyVStack(spacing: 8) {
                         ForEach(Array(service.playlist.enumerated()), id: \.element.id) { index, item in
-                            PlaylistRow(
-                                item: item,
-                                index: index + 1,
-                                isSelected: selectedIndex == index
-                            )
-                            .focused($focusedItem, equals: item.id)
-                            .onTapGesture {
+                            Button(action: {
                                 selectedIndex = index
-                                onPlay()
+                                onPlay(index)
+                            }) {
+                                PlaylistRow(
+                                    item: item,
+                                    index: index + 1,
+                                    isSelected: selectedIndex == index
+                                )
                             }
+                            .buttonStyle(PlaylistRowButtonStyle())
                         }
                     }
                     .padding(.horizontal, 60)
@@ -98,13 +99,13 @@ struct PlaylistBrowserView: View {
     }
 }
 
+// MARK: - Playlist Row
+
 /// Single row in the playlist browser
 struct PlaylistRow: View {
     let item: VideoItem
     let index: Int
     let isSelected: Bool
-
-    @Environment(\.isFocused) var isFocused
 
     var body: some View {
         HStack(spacing: 16) {
@@ -131,18 +132,29 @@ struct PlaylistRow: View {
 
             Spacer()
 
-            // Play icon for focused item
+            // Play icon
             Image(systemName: "play.circle.fill")
                 .font(.title2)
                 .foregroundColor(.blue)
-                .opacity(isFocused ? 1 : 0)
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 20)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(isFocused ? Color.white.opacity(0.1) : Color.clear)
-        )
-        .contentShape(Rectangle())
+        .padding(.vertical, 14)
+        .padding(.horizontal, 24)
+    }
+}
+
+// MARK: - Custom Button Style for tvOS Focus
+
+/// Custom button style that handles tvOS focus highlighting correctly
+struct PlaylistRowButtonStyle: ButtonStyle {
+    @Environment(\.isFocused) var isFocused
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isFocused ? Color.white.opacity(0.15) : Color.clear)
+            )
+            .scaleEffect(isFocused ? 1.02 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: isFocused)
     }
 }
