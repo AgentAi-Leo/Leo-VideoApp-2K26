@@ -6,3 +6,4 @@
 - [x] Test layout wrapping on simulated mobile/narrow screen constraints.
 - [x] Implement sequential numerical step badges on Playlist Workspace cards (1, 2, 3).
 - [x] Evolve step badges into structurally mirrored double-circle outlines with native dark contrast numerals.
+- [x] Upscale numerical step badges by precisely 200% alongside relative dynamic grid typography offset values.
