@@ -1487,23 +1487,19 @@
             </button>
             <button id="btn-clear-all" class="btn btn--danger">CLEAR ALL</button>
           </div>
-          <!-- Add Video to Intro Playlist -->
-          <div class="card" id="add-intro-card">
+          <!-- Intro Playlist Section -->
+          <div class="card" id="intro-playlist-card">
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
               <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> CREATE: INTRO PLAYLIST <<<</h3>
             </div>
-            <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays first, before your main playlist.</p>
+            <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays first, before your main playlist. (<span id="intro-count">0</span> items)</p>
 
-            <div class="input-group">
+            <div class="input-group" style="margin-top: 1.5rem;">
               <input id="intro-url" class="text-input" type="url" placeholder="YouTube, Vimeo, or direct video URL…" inputmode="url" autocomplete="off" />
               <input id="intro-title" class="text-input" type="text" placeholder="Title (optional)" autocomplete="off" />
             </div>
-            <button id="btn-add-intro" class="btn btn--primary">Add to Intro Playlist</button>
-          </div>
+            <button id="btn-add-intro" class="btn btn--primary" style="margin-bottom: 2rem;">Add to Intro Playlist</button>
 
-          <!-- Intro Playlist List -->
-          <div class="card" id="intro-playlist-card">
-            <h3 class="card-title">Intro Playlist <span id="intro-count" class="badge">0</span></h3>
             <ul id="intro-list" class="playlist-list" aria-label="Intro Playlist items" role="list"></ul>
             <div id="intro-empty" class="playlist-empty" aria-live="polite">No videos yet. Add one above.</div>
             <div style="display:flex;align-items:center;justify-content:flex-start;margin-top:1rem">
@@ -1511,15 +1507,14 @@
             </div>
           </div>
 
-          <!-- Add Video to Playlist -->
-          <div class="card" id="add-video-card">
+          <!-- Main Playlist Section -->
+          <div class="card" id="playlist-card">
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
               <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> CREATE: MAIN PLAYLIST <<<</h3>
             </div>
-            <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays after INTRO PLAYLIST</p>
+            <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays after INTRO PLAYLIST. (<span id="playlist-count">0</span> items)</p>
 
-
-            <div class="input-group">
+            <div class="input-group" style="margin-top: 1.5rem;">
               <input
                 id="add-url"
                 class="text-input"
@@ -1536,12 +1531,7 @@
                 autocomplete="off"
               />
             </div>
-            <button id="btn-add-video" class="btn btn--primary">Add to Playlist</button>
-          </div>
-
-          <!-- Playlist List -->
-          <div class="card" id="playlist-card">
-            <h3 class="card-title">Playlist <span id="playlist-count" class="badge">0</span></h3>
+            <button id="btn-add-video" class="btn btn--primary" style="margin-bottom: 2rem;">Add to Playlist</button>
 
             <ul id="playlist-list" class="playlist-list" aria-label="Playlist items" role="list">
               <!-- Items injected by JS -->
@@ -1571,23 +1561,19 @@
             </div>
           </div>
 
-          <!-- Add Video to Outro Playlist -->
-          <div class="card" id="add-outro-card">
+          <!-- Outro Playlist Section -->
+          <div class="card" id="outro-playlist-card">
             <div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap">
               <h3 class="card-title" style="padding:0; margin:0; font-size:1.20em; font-weight:800;">>>> CREATE: OUTRO PLAYLIST <<<</h3>
             </div>
-            <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays last, after your main playlist.</p>
+            <p class="card-hint" style="margin-top:6px; color: var(--accent-2); font-size: 1.22rem;">Plays last, after your main playlist. (<span id="outro-count">0</span> items)</p>
 
-            <div class="input-group">
+            <div class="input-group" style="margin-top: 1.5rem;">
               <input id="outro-url" class="text-input" type="url" placeholder="YouTube, Vimeo, or direct video URL…" inputmode="url" autocomplete="off" />
               <input id="outro-title" class="text-input" type="text" placeholder="Title (optional)" autocomplete="off" />
             </div>
-            <button id="btn-add-outro" class="btn btn--primary">Add to Outro Playlist</button>
-          </div>
+            <button id="btn-add-outro" class="btn btn--primary" style="margin-bottom: 2rem;">Add to Outro Playlist</button>
 
-          <!-- Outro Playlist List -->
-          <div class="card" id="outro-playlist-card">
-            <h3 class="card-title">Outro Playlist <span id="outro-count" class="badge">0</span></h3>
             <ul id="outro-list" class="playlist-list" aria-label="Outro Playlist items" role="list"></ul>
             <div id="outro-empty" class="playlist-empty" aria-live="polite">No videos yet. Add one above.</div>
             <div style="display:flex;align-items:center;justify-content:flex-start;margin-top:1rem">
