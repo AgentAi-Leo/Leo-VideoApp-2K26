@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-N
+# VideoApp - v1 - vers-O
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
