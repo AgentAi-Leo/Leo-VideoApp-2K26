@@ -2531,7 +2531,7 @@
       DOM.video.volume = parseFloat(DOM.volumeSlider.value);
       DOM.video.playbackRate = savedRate;
       DOM.video.src = item.url;
-      DOM.video.load();
+      // Explicitly bypassing DOM.video.load() here to securely lock Apple TV AirPlay pipelines from dropping over gap transitions
       DOM.video.play().then(() => {
         DOM.video.muted = false;
         DOM.video.playbackRate = savedRate; // re-apply after play (some browsers reset it)
