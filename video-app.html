@@ -2539,18 +2539,31 @@
   }
 
   function playPrev() {
-    const fpi = firstPlaylistIdx();
     if (AP.currentTime > 3) {
       AP.seek(0);
-    } else {
-      const queue = buildQueue();
-      const prev  = State.currentIndex - 1;
-      if (prev >= fpi) {
-        loadVideo(prev);                        // normal prev within playlist
-      } else if (State.currentIndex === 0) {
-        AP.seek(0);                             // on intro — restart it
+      return;
+    }
+    
+    const queue = buildQueue();
+    const fpi = firstPlaylistIdx();
+    const prev = State.currentIndex - 1;
+    
+    if (State.currentIndex < fpi) {
+      // Inside Intro Playlist
+      if (prev >= 0) {
+        loadVideo(prev);
       } else {
-        loadVideo(queue.length - 1);            // wrap to last playlist item
+        AP.seek(0); // At first intro video, restart it
+      }
+    } else {
+      // Inside Main or Outro Playlist
+      if (prev >= fpi) {
+        loadVideo(prev);
+      } else if (State.currentIndex === fpi) {
+        // Going back from very first Main video -> loop to end of everything
+        if (queue.length > 0) loadVideo(queue.length - 1);
+      } else {
+        if (queue.length > 0) loadVideo(queue.length - 1);
       }
     }
   }

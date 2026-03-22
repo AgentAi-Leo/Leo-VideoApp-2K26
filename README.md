@@ -80,7 +80,9 @@ ADDS vers-L
   - ALSO WORKS AWESOME!!!
 
   ADDS vers-N
+  - Upgrading INTRO VIDEO To INTRO PLAYLIST & Adding OUTRO PLAYLIST
   - 
+  
   
 
 

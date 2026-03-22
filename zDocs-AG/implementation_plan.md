@@ -1,7 +1,7 @@
 # Multi-Playlist Architecture Overhaul Plan
 
 ## Core Objective
-Upgrade the single-video "Intro" feature into a fully functional **Intro Playlist**, and introduce an identical **Outro Playlist**. This transforms the app from a [Single Intro -> Main Playlist] sequence into a three-tiered pipeline: [Intro Playlist -> Main Playlist -> Outro Playlist].
+Upgrade the single-video "Intro" feature into a fully functional * INTRO PLAYLIST *, and introduce an identical * OUTRO PLAYLIST *. This transforms the app from a [Single Intro -> Main Playlist] sequence into a three-tiered pipeline: [Intro Playlist -> Main Playlist -> Outro Playlist].
 
 ## Proposed Changes
 
