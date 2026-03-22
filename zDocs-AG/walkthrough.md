@@ -1,18 +1,28 @@
-# Hover Preview Implementation
+# Multi-Playlist Architecture Restructure Walkthrough
 
-A dynamic floating 15-second visual preview window has been cleanly integrated for both the Playlist items and the pending Intro video.
+### Overview
+We successfully evolved the single-entry 'Intro Video' structure into a fully functional **Intro Playlist** and added an entirely new, structurally identical **Outro Playlist**. This transforms the app's core sequence engine from `[Intro -> Main Playlist]` to `[Intro Playlist -> Main Playlist -> Outro Playlist]`.
 
-## Built Features
+### Key Achievements
 
-- **Global Player Mount:** Created an absolute-tethered `#hover-preview-container` that floats universally on top of all application UI.
-- **Debounced Interaction:** Tooltips require a tight `400ms` physical hover intent before spawning to completely prevent layout thrashing and jarring pop-ups if you just sweep your mouse across the list rapidly.
-- **Smart Pointer Tracking:** Once the tooltip spans, it continuously monitors your mouse coordinates (`e.clientX`, `e.clientY`), positioning the tooltip `15px` down and to the right of your cursor payload. Real-time viewport bounds collision logic perfectly guarantees the window never bleeds off your monitor edge.
-- **URL Payload Inference:** Automatically parses out raw links on the fly using the existing `detectVideoInfo()` logic. Instantiates a mute/autoplay `<iframe>` block if the string represents YouTube or Vimeo, and a silent `<video>` node for everything else.
-- **Strict 15-Second Teardown Constraints:** Starts a strict programmatic `15000ms` background timer upon initialization. When the duration hits `0`, it completely rips the video pipeline out of the DOM, killing any active background bandwidth.
+**1. Data State and Storage Pipelines:**
+- Replaced the singular `State.introVideo` literal heavily hardcoded into the layout with a dynamic `State.introPlaylist` array.
+- Spawned `State.outroPlaylist` to handle post-roll videos. 
+- Integrated and deployed LocalStorage keys `vapp_intro_playlist` and `vapp_outro_playlist` so session data successfully persists cleanly.
 
-## Verification Steps
-1. Navigate to the `Add / Edit` screen (HOME > Plus Button).
-2. Hover over any pre-loaded item sitting in the **Playlist Queue**, or intentionally hover strictly over the floating `#intro-preview` element in the top form window.
-3. Keep the mouse stationary for `400ms` and watch the cinematic tooltip spawn instantly and bind to your cursor position.
-4. Keep the tooltip tethered strictly for 15 seconds to observe the programmatic teardown.
-5. Exit the hovering target to instantly terminate the container pipeline.
+**2. Duplicated and Wired HTML Scopes:**
+- Refactored `#intro-card` breaking it completely down and rebuilding it up into `#add-intro-card` (inputs) and `#intro-playlist-card` (rendering list).
+- Generated an identical `#add-outro-card` and `#outro-playlist-card` structurally mapped functionally below the main playlist grid.
+
+**3. Abstracted Rendering Engine:**
+- Stripped out 330 hard-coded lines of non-DRY list regeneration. 
+- Rebuilt into a single flexible polymorphic `renderAllLists()` function that securely parses the DOM definitions independently.
+
+**4. Safely Scoped Drag and Drop Limits:**
+- Re-wired standard and mobile-touch `SortableJS/Touch` list drops to intercept bounding lists exactly. The script now natively validates the contextual list identity (`listKey`), completely preventing users from dropping elements incorrectly out-of-bounds across the Intro, Main, and Outro limits.
+
+**5. Seamless Global Queue Flow:**
+- Rewrote `buildQueue()` mapping the active player states cleanly. It now seamlessly concat-loads `State.introPlaylist`, `State.playlist`, and `State.outroPlaylist` linearly allowing playback to exhaust each layer without additional pipeline restructuring. `firstPlaylistIdx` calculates correct loop endpoints gracefully.
+
+### Next Steps (Your Review):
+- Open the UI and test mapping new items iteratively into **Intro List**, **Main List**, and **Outro List**. Verify that pressing **PLAY** automatically jumps natively through each tier properly. Drag and Drop videos inside their containers to see how beautifully it now works.
