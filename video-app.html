@@ -2101,7 +2101,7 @@
         this.yt = null;
       }
       if (this.type === 'vimeo') {
-        window.removeEventListener('message', handleVimeoMessage);
+        // Secure global `handleVimeoMessage` listener intact — do not dynamically remove it.
         try { DOM.vmPlayer.src = 'about:blank'; } catch {}
       }
       this.type = null;
