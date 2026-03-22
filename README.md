@@ -82,7 +82,9 @@ ADDS vers-L
   ADDS vers-N
   - Upgrading INTRO VIDEO To INTRO PLAYLIST & Adding OUTRO PLAYLIST
   - Updated HOME Icon to WATCH TV Icon
-  
+  - Updated PLAYLIST NAMES To "CREATE: INTRO PLAYLIST", "CREATE: MAIN PLAYLIST", "CREATE: OUTRO PLAYLIST"
+  - 
+
   
   
 
