@@ -8,3 +8,4 @@
 - [x] Evolve step badges into structurally mirrored double-circle outlines with native dark contrast numerals.
 - [x] Upscale numerical step badges by precisely 200% alongside relative dynamic grid typography offset values.
 - [x] Symmetrically decouple destructive playlist formatting actions ("Clear X") and heavily escalate bottom padding vectors evenly across all 3 DOM footers.
+- [x] Migrate cards to `flex-direction: column` and apply `margin-top: auto` properties to bind all clear buttons precisely flush onto the identical horizontal floor horizon regardless of grid stretching disparities.

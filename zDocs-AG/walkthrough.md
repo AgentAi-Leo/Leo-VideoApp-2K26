@@ -7,6 +7,7 @@
 **2. Component Decoupling & Vertical Workflow Hierarchy:**
 - **Step Badges (200% Scaled)**: Replaced legacy ">>>" titles with dynamic linear-gradient numerical tags (1, 2, 3), scaled explicitly by 200%, layered beneath a hollow dark gap parameter (`var(--bg)`) to invoke a native double-circle paradigm globally centered above card topography.
 - **Destructive Footer Extractions**: Separated the three destructive clear commands from their inline dependencies. Centralized each into isolated standalone containers pushed deeply downwards with uniform `3rem` layout spacing to minimize workflow misclicks. Renamed primary button to "Clear Main" for global consistency.
+- **Bottom-Flush Action Horizon**: Shifted all three primary playlist `.card` wrappers into `flex-direction: column` components, enabling dynamic `margin-top: auto` configurations to forcibly slam the destructive footers flat against the lowest common grid baseline, ensuring absolute horizontal visual symmetry despite uneven list lengths!
 - **Toggle Header Architecture**: Gathered configuration toggles (loop, black gap space) onto their own upper boundary within the central card layout to structurally group configuration mechanics away from destruction states.
 
 ### Next Steps (Your Review):
