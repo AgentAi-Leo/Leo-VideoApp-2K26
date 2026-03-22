@@ -13,7 +13,8 @@ Instead of rigid pagination, we implement a **Fixed-Height Scrollable Container*
 1. Apply `max-height: 500px;` (approximately 7-8 items depending on screen size) to the `ul.playlist-list` CSS class.
 2. Apply `overflow-y: auto;` and `overflow-x: hidden;` to trigger vertical scrolling only when the item ceiling is breached.
 3. Design a custom Webkit scrollbar (matching the purple/dark glassmorphism theme) so it renders as a premium, native element rather than a clunky default grey browser scrollbar.
-4. Ensure SortableJS drag-and-drop auto-scrolls the container when pulling a list item toward the top or bottom boundaries.
+4. Scale all three terminal "Clear" action strings completely natively to `100% width` directly mirroring the volumetric visual weight of the master action nodes.
+5. Ensure SortableJS drag-and-drop auto-scrolls the container when pulling a list item toward the top or bottom boundaries.
 
 ## User Review Required
 > [!IMPORTANT]
