@@ -87,7 +87,7 @@ ADDS vers-L
   - WORKS AWESOME!!! 
 
   ADDS vers-O
-  - Cleaned Up CREATE UI! Drastically Minimized.
+  - Cleaned Up CREATE UI! Drastically Minimized - VERTICALLY STACKED.
   - 
 
   
