@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-Q
+# VideoApp - v1 - vers-R
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -99,7 +99,7 @@ ADDS vers-L
   ADDS vers-Q
    - REAL Q - SMALL BUT AWESOME! 
   
-  ADDS vers-R (COMING UP)
+  ADDS vers-R 
    - Everything is AWESOME But VIDEO PLAYLISTS Are Too Small
    - Make Playlist Items Larger
    
