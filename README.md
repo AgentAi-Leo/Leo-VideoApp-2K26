@@ -105,7 +105,8 @@ ADDS vers-L
    - LOOKS & WORKS AWESOME - GREAT SIZE (ONLY IN ZEN FIREFOX)!!! 
  
  ADDS vers-S 
-   - Added Airplay Support Via Safari ONLY!!! (AT MOMENT)
+   - Added Airplay Support Via Safari but nasty Playback Flashing Issues.
+   - Added Apple TVOS Companion Viewer App Using AVQueuePlayer Via Xcode
 
    
 

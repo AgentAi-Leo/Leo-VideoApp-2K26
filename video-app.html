@@ -1333,6 +1333,7 @@
           aria-label="Video player"
         ></video>
 
+
         <!-- YouTube IFrame API renders here -->
         <div id="yt-player" aria-hidden="true"></div>
 
@@ -2439,6 +2440,58 @@
   }
 
   /* ═══════════════════════════════════════════════════════
+     BLOB PRE-FETCH CACHE — AirPlay-safe pre-caching
+     Downloads the NEXT video file into browser memory so
+     the .src swap + AirPlay pipeline restart is near-instant.
+  ═══════════════════════════════════════════════════════ */
+  const _blobCache = new Map(); // url -> blobURL
+  let _blobFetchController = null; // abort previous fetch if playlist changes
+
+  // Normalize URL for comparison
+  function _normalizeUrl(u) {
+    try { return new URL(u, location.href).href.replace(/\/+$/, ''); } catch { return u; }
+  }
+
+  // Pre-fetch the next native video as a blob and cache its blob URL
+  function _preloadNextBlob(currentIndex) {
+    const queue = buildQueue();
+    const nextIdx = currentIndex + 1;
+    const targetIdx = nextIdx < queue.length ? nextIdx
+                    : State.loop ? firstPlaylistIdx()
+                    : -1;
+    if (targetIdx < 0) return;
+    const nextItem = queue[targetIdx];
+    if (!nextItem?.url) return;
+
+    const nextInfo = detectVideoInfo(nextItem.url);
+    if (nextInfo.type !== 'native') return; // only pre-fetch native mp4/webm files
+
+    const normalized = _normalizeUrl(nextItem.url);
+    if (_blobCache.has(normalized)) return; // already cached
+
+    // Abort any previous in-flight fetch
+    if (_blobFetchController) { try { _blobFetchController.abort(); } catch {} }
+    _blobFetchController = new AbortController();
+
+    fetch(nextItem.url, { signal: _blobFetchController.signal, mode: 'cors' })
+      .then(r => {
+        if (!r.ok) throw new Error('fetch failed');
+        return r.blob();
+      })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        _blobCache.set(normalized, blobUrl);
+        // Limit cache to 2 entries to avoid memory bloat
+        if (_blobCache.size > 2) {
+          const oldest = _blobCache.keys().next().value;
+          URL.revokeObjectURL(_blobCache.get(oldest));
+          _blobCache.delete(oldest);
+        }
+      })
+      .catch(() => {}); // CORS fail or abort — silent, we'll use direct URL as fallback
+  }
+
+  /* ═══════════════════════════════════════════════════════
      PLAYER — build full playback queue
   ═══════════════════════════════════════════════════════ */
   function buildQueue() {
@@ -2522,38 +2575,31 @@
     });
 
     // Route to correct player
-    AP.destroy(); // tear down previous player
+    AP.destroy();
     AP.type = info.type;
 
     if (info.type === 'native') {
       showPlayerType('native');
+
+      // ── BLOB PRE-CACHE: use cached blob URL if available for near-instant AirPlay pipeline restart ──
+      const normalized = _normalizeUrl(item.url);
+      const srcToUse = _blobCache.has(normalized) ? _blobCache.get(normalized) : item.url;
+
       DOM.video.muted  = true;
       DOM.video.volume = parseFloat(DOM.volumeSlider.value);
       DOM.video.playbackRate = savedRate;
-      DOM.video.src = item.url;
-      // Explicitly bypassing DOM.video.load() here to securely lock Apple TV AirPlay pipelines from dropping over gap transitions
+      DOM.video.src = srcToUse;
 
-      const initiatePlay = () => {
-        DOM.video.play().then(() => {
-          DOM.video.muted = false;
-          DOM.video.playbackRate = savedRate; // re-apply after play (some browsers reset it)
-        }).catch(() => {
-          DOM.video.muted = false; // unmute so audio plays when user starts manually
-          showControls(false);     // reveal controls so user can tap play
-        });
-      };
+      DOM.video.play().then(() => {
+        DOM.video.muted = false;
+        DOM.video.playbackRate = savedRate;
+      }).catch(() => {
+        DOM.video.muted = false;
+        showControls(false);
+      });
 
-      if (gapActive) {
-        // Keep AirPlay alive by letting it internally buffer the new source immediately, but visually delay actual playback frames
-        gapTimer = setTimeout(() => {
-          gapTimer = null;
-          blackOverlay.classList.remove('visible');
-          gapActive = false;
-          initiatePlay();
-        }, 1770);
-      } else {
-        initiatePlay();
-      }
+      // Kick off pre-fetching the NEXT track as a blob
+      _preloadNextBlob(index);
 
     } else if (info.type === 'youtube') {
       showPlayerType('youtube');
@@ -2566,30 +2612,11 @@
           setTimeout(playNext, 1200);
         }
       };
-      
-      if (gapActive) {
-        gapTimer = setTimeout(() => {
-          gapTimer = null;
-          blackOverlay.classList.remove('visible');
-          gapActive = false;
-          startYt();
-        }, 1770);
-      } else {
-        startYt();
-      }
+      startYt();
 
     } else if (info.type === 'vimeo') {
       showPlayerType('vimeo');
-      if (gapActive) {
-        gapTimer = setTimeout(() => {
-          gapTimer = null;
-          blackOverlay.classList.remove('visible');
-          gapActive = false;
-          createVimeoPlayer(info.id, fromInit);
-        }, 1770);
-      } else {
-        createVimeoPlayer(info.id, fromInit);
-      }
+      createVimeoPlayer(info.id, fromInit);
     }
   }
 
@@ -2610,7 +2637,14 @@
     cancelGap();
     blackOverlay.classList.add('visible');
     gapActive = true;
-    fn(); // Initiate media load instantly so AirPlay securely locks the new buffer, but actual playback will be delayed within loadVideo
+    
+    // Physical pipeline stall: delay the execution to maintain the old hardware socket, then organically swap.
+    gapTimer = setTimeout(() => {
+      gapTimer = null;
+      blackOverlay.classList.remove('visible');
+      gapActive = false;
+      fn();
+    }, 1770);
   }
 
   function playNext() {
@@ -2748,49 +2782,75 @@
 
   /* ═══════════════════════════════════════════════════════
      NATIVE VIDEO ELEMENT EVENTS
+     Wrapped in _bindNativeVideoEvents() so we can re-attach
+     listeners when swapping preloaded video elements.
   ═══════════════════════════════════════════════════════ */
-  const vid = DOM.video;
+  // Track which element currently has listeners to avoid double-binding
+  let _boundVideoEl = null;
 
-  vid.addEventListener('play',     onPlayerPlay);
-  vid.addEventListener('pause',    onPlayerPause);
-  vid.addEventListener('ended',    onPlayerEnded);
-  vid.addEventListener('waiting',  onPlayerBuffering);
-  vid.addEventListener('canplay',  onPlayerCanPlay);
-  vid.addEventListener('playing',  onPlayerCanPlay);
+  function _bindNativeVideoEvents(el) {
+    // Remove from previous element if different
+    if (_boundVideoEl && _boundVideoEl !== el) {
+      _boundVideoEl.removeEventListener('play',     onPlayerPlay);
+      _boundVideoEl.removeEventListener('pause',    onPlayerPause);
+      _boundVideoEl.removeEventListener('ended',    onPlayerEnded);
+      _boundVideoEl.removeEventListener('waiting',  onPlayerBuffering);
+      _boundVideoEl.removeEventListener('canplay',  onPlayerCanPlay);
+      _boundVideoEl.removeEventListener('playing',  onPlayerCanPlay);
+      _boundVideoEl.removeEventListener('timeupdate', _onNativeTimeUpdate);
+      _boundVideoEl.removeEventListener('durationchange', _onNativeDurationChange);
+      _boundVideoEl.removeEventListener('loadedmetadata', _onNativeLoadedMeta);
+      _boundVideoEl.removeEventListener('error', _onNativeError);
+    }
+    _boundVideoEl = el;
+    el.addEventListener('play',     onPlayerPlay);
+    el.addEventListener('pause',    onPlayerPause);
+    el.addEventListener('ended',    onPlayerEnded);
+    el.addEventListener('waiting',  onPlayerBuffering);
+    el.addEventListener('canplay',  onPlayerCanPlay);
+    el.addEventListener('playing',  onPlayerCanPlay);
+    el.addEventListener('timeupdate', _onNativeTimeUpdate);
+    el.addEventListener('durationchange', _onNativeDurationChange);
+    el.addEventListener('loadedmetadata', _onNativeLoadedMeta);
+    el.addEventListener('error', _onNativeError);
+  }
 
-  vid.addEventListener('timeupdate', () => {
+  function _onNativeTimeUpdate() {
     if (AP.type !== 'native' || State.isSeeking) return;
-    const buf = vid.buffered.length ? vid.buffered.end(vid.buffered.length - 1) : null;
-    syncProgressBar(vid.currentTime, vid.duration, buf);
+    const v = DOM.video;
+    const buf = v.buffered.length ? v.buffered.end(v.buffered.length - 1) : null;
+    syncProgressBar(v.currentTime, v.duration, buf);
 
     // PREVENT AIRPLAY TEARDOWN:
-    // Safari natively terminates AirPlay the exact millisecond a track triggers 'ended'.
-    // By defensively freezing playback 0.45 seconds before completion, Apple TV holds the socket wide open!
-    if (vid.duration > 1) {
-      if (vid.currentTime >= vid.duration - 0.45 && !window._endingIntercepted) {
+    // Intercept 0.45s before natural end to trigger our preload swap path
+    // instead of the browser's native 'ended' event which tears down AirPlay.
+    if (v.duration > 1) {
+      if (v.currentTime >= v.duration - 0.45 && !window._endingIntercepted) {
         window._endingIntercepted = true;
-        vid.pause();
         onPlayerEnded();
-      } else if (vid.currentTime < vid.duration - 0.8) {
-        window._endingIntercepted = false; // reset when scrubbed or loaded
+      } else if (v.currentTime < v.duration - 0.8) {
+        window._endingIntercepted = false;
       }
     }
-  });
+  }
 
-  vid.addEventListener('durationchange', () => {
+  function _onNativeDurationChange() {
     if (AP.type !== 'native') return;
-    syncProgressBar(vid.currentTime, vid.duration, null);
-  });
+    syncProgressBar(DOM.video.currentTime, DOM.video.duration, null);
+  }
 
-  vid.addEventListener('loadedmetadata', () => {
+  function _onNativeLoadedMeta() {
     if (AP.type !== 'native') return;
-    DOM.timeDuration.textContent = formatTime(vid.duration);
-  });
+    DOM.timeDuration.textContent = formatTime(DOM.video.duration);
+  }
 
-  vid.addEventListener('error', () => {
+  function _onNativeError() {
     if (AP.type !== 'native') return;
     onPlayerError(false);
-  });
+  }
+
+  // Initial binding on the primary video element
+  _bindNativeVideoEvents(DOM.video);
 
   /* ═══════════════════════════════════════════════════════
      PLAYER TAP TARGET — tap to toggle controls
@@ -2923,14 +2983,15 @@
   window._airplayDeviceAvailable = false; // Trust global flag
   
   if (window.WebKitPlaybackTargetAvailabilityEvent) {
-    DOM.video.addEventListener('webkitplaybacktargetavailabilitychanged', e => {
+    const _onAirplayAvail = e => {
       window._airplayDeviceAvailable = (e.availability === 'available');
       if (AP.type === 'native' && window._airplayDeviceAvailable) {
         btnAirplay.style.display = 'inline-flex';
       } else {
         btnAirplay.style.display = 'none';
       }
-    });
+    };
+    DOM.video.addEventListener('webkitplaybacktargetavailabilitychanged', _onAirplayAvail);
 
     // Ensure robust styling by manually tracking active rendering state via continuous polling 
     setInterval(() => {
