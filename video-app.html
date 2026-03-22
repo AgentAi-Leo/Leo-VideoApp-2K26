@@ -2532,27 +2532,64 @@
       DOM.video.playbackRate = savedRate;
       DOM.video.src = item.url;
       // Explicitly bypassing DOM.video.load() here to securely lock Apple TV AirPlay pipelines from dropping over gap transitions
-      DOM.video.play().then(() => {
-        DOM.video.muted = false;
-        DOM.video.playbackRate = savedRate; // re-apply after play (some browsers reset it)
-      }).catch(() => {
-        DOM.video.muted = false; // unmute so audio plays when user starts manually
-        showControls(false);     // reveal controls so user can tap play
-      });
+
+      const initiatePlay = () => {
+        DOM.video.play().then(() => {
+          DOM.video.muted = false;
+          DOM.video.playbackRate = savedRate; // re-apply after play (some browsers reset it)
+        }).catch(() => {
+          DOM.video.muted = false; // unmute so audio plays when user starts manually
+          showControls(false);     // reveal controls so user can tap play
+        });
+      };
+
+      if (gapActive) {
+        // Keep AirPlay alive by letting it internally buffer the new source immediately, but visually delay actual playback frames
+        gapTimer = setTimeout(() => {
+          gapTimer = null;
+          blackOverlay.classList.remove('visible');
+          gapActive = false;
+          initiatePlay();
+        }, 1770);
+      } else {
+        initiatePlay();
+      }
 
     } else if (info.type === 'youtube') {
       showPlayerType('youtube');
-      try {
-        await loadYouTubeAPI();
-        createYouTubePlayer(info.id, fromInit);
-      } catch {
-        showToast('⚠ YouTube player failed to load');
-        setTimeout(playNext, 1200);
+      const startYt = async () => {
+        try {
+          await loadYouTubeAPI();
+          createYouTubePlayer(info.id, fromInit);
+        } catch {
+          showToast('⚠ YouTube player failed to load');
+          setTimeout(playNext, 1200);
+        }
+      };
+      
+      if (gapActive) {
+        gapTimer = setTimeout(() => {
+          gapTimer = null;
+          blackOverlay.classList.remove('visible');
+          gapActive = false;
+          startYt();
+        }, 1770);
+      } else {
+        startYt();
       }
 
     } else if (info.type === 'vimeo') {
       showPlayerType('vimeo');
-      createVimeoPlayer(info.id, fromInit);
+      if (gapActive) {
+        gapTimer = setTimeout(() => {
+          gapTimer = null;
+          blackOverlay.classList.remove('visible');
+          gapActive = false;
+          createVimeoPlayer(info.id, fromInit);
+        }, 1770);
+      } else {
+        createVimeoPlayer(info.id, fromInit);
+      }
     }
   }
 
@@ -2570,15 +2607,10 @@
   }
   function withBlackGap(fn) {
     if (!State.blackGap) { fn(); return; }
-    gapActive = true;
-    AP.destroy();
+    cancelGap();
     blackOverlay.classList.add('visible');
-    gapTimer = setTimeout(() => {
-      gapTimer = null;
-      blackOverlay.classList.remove('visible');
-      gapActive = false;
-      fn();
-    }, 1770);
+    gapActive = true;
+    fn(); // Initiate media load instantly so AirPlay securely locks the new buffer, but actual playback will be delayed within loadVideo
   }
 
   function playNext() {
@@ -2884,6 +2916,14 @@
         btnAirplay.style.display = 'inline-flex';
       } else {
         btnAirplay.style.display = 'none';
+      }
+    });
+
+    DOM.video.addEventListener('webkitcurrentplaybacktargetiswirelesschanged', e => {
+      if (DOM.video.webkitCurrentPlaybackTargetIsWireless) {
+        btnAirplay.style.color = '#007AFF'; // Apple blue when actively casting
+      } else {
+        btnAirplay.style.color = ''; // revert to native inherit
       }
     });
 
