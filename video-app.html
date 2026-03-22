@@ -2762,6 +2762,19 @@
     if (AP.type !== 'native' || State.isSeeking) return;
     const buf = vid.buffered.length ? vid.buffered.end(vid.buffered.length - 1) : null;
     syncProgressBar(vid.currentTime, vid.duration, buf);
+
+    // PREVENT AIRPLAY TEARDOWN:
+    // Safari natively terminates AirPlay the exact millisecond a track triggers 'ended'.
+    // By defensively freezing playback 0.45 seconds before completion, Apple TV holds the socket wide open!
+    if (vid.duration > 1) {
+      if (vid.currentTime >= vid.duration - 0.45 && !window._endingIntercepted) {
+        window._endingIntercepted = true;
+        vid.pause();
+        onPlayerEnded();
+      } else if (vid.currentTime < vid.duration - 0.8) {
+        window._endingIntercepted = false; // reset when scrubbed or loaded
+      }
+    }
   });
 
   vid.addEventListener('durationchange', () => {
