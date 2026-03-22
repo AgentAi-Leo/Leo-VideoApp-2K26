@@ -928,8 +928,8 @@
     .playlist-item {
       display: flex;
       align-items: center;
-      gap: 24px;
-      padding: 30px 32px;
+      gap: 16px;
+      padding: 16px 18px;
       background: var(--bg-3);
       border: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: var(--r-md);
@@ -954,7 +954,7 @@
       cursor: grab;
     }
 
-    .playlist-item__drag svg { width: 40px; height: 40px; }
+    .playlist-item__drag svg { width: 22px; height: 22px; }
 
     .playlist-item__info {
       flex: 1;
@@ -963,18 +963,18 @@
 
     .playlist-item__title {
       display: block;
-      font-size: 1.75rem;
-      font-weight: 800;
+      font-size: 1.1rem;
+      font-weight: 700;
       color: var(--text);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .playlist-item__url {
       display: block;
-      font-size: 1.4rem;
+      font-size: 0.9rem;
       color: #8c8cc4;
       white-space: nowrap;
       overflow: hidden;
@@ -989,7 +989,7 @@
     }
 
     .playlist-item__remove:hover { color: #ff0000; opacity: 1; }
-    .playlist-item__remove svg   { width: 40px; height: 40px; }
+    .playlist-item__remove svg   { width: 22px; height: 22px; }
 
     .playlist-empty {
       text-align: center;
@@ -1509,7 +1509,7 @@
         </div>
 
         <!-- ── Sub-panel: PLAYLIST ── -->
-        <div id="create-sub-playlist" class="create-subpanel create-subpanel--active" style="max-width:2400px;margin-left:auto;margin-right:auto">
+        <div id="create-sub-playlist" class="create-subpanel create-subpanel--active" style="width:100%;max-width:1450px;margin-left:auto;margin-right:auto">
 
           <!-- PREVIEW + CLEAR ALL + LOOP -->
           <div style="margin: 4.5em 16px 3em; display:flex; justify-content:center; gap:16px; flex-wrap:wrap">
@@ -1522,7 +1522,7 @@
             <button id="btn-clear-all" class="btn btn--danger">CLEAR ALL</button>
           </div>
           <!-- Horizontal Workspace Grid -->
-          <div class="horizontal-playlist-container" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 0 16px 48px 16px;">
+          <div class="horizontal-playlist-container" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding: 0 16px 48px 16px;">
             <!-- Intro Playlist Section -->
             <div class="card" id="intro-playlist-card" style="margin: 0; display: flex; flex-direction: column;">
             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;">
