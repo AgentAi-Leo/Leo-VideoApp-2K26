@@ -2919,13 +2919,18 @@
       }
     });
 
-    DOM.video.addEventListener('webkitcurrentplaybacktargetiswirelesschanged', e => {
-      if (DOM.video.webkitCurrentPlaybackTargetIsWireless) {
-        btnAirplay.style.color = '#007AFF'; // Apple blue when actively casting
-      } else {
-        btnAirplay.style.color = ''; // revert to native inherit
+    // Ensure robust styling by manually tracking active rendering state via continuous polling 
+    setInterval(() => {
+      if (btnAirplay && window._airplayDeviceAvailable) {
+        const isCasting = DOM.video.webkitCurrentPlaybackTargetIsWireless;
+        const color = isCasting ? '#007AFF' : '';
+        btnAirplay.style.color = color;
+        const svg = btnAirplay.querySelector('svg');
+        if (svg) svg.style.fill = isCasting ? '#007AFF' : 'currentColor';
       }
-    });
+    }, 1000);
+
+    DOM.video.addEventListener('webkitcurrentplaybacktargetiswirelesschanged', e => {});
 
     btnAirplay.addEventListener('click', e => {
       e.stopPropagation();
