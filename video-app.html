@@ -2937,13 +2937,14 @@
     setPosition(e) {
       if (!this.el.classList.contains('visible')) return;
       const r = this.el.getBoundingClientRect();
+      const tr = (e.currentTarget || e.target).getBoundingClientRect();
       
-      // Position centered directly above the pointer with a 15px margin buffer
-      let x = e.clientX - (r.width / 2);
-      let y = e.clientY - r.height - 15;
+      // Center directly above the hovered target element
+      let x = tr.left + (tr.width / 2) - (r.width / 2);
+      let y = tr.top - r.height - 15;
       
       // Viewport collision handling
-      if (y < 10) y = e.clientY + 20; // Flip below if clipping top edge
+      if (y < 10) y = tr.bottom + 15; // Flip below if clipping top edge
       if (x < 10) x = 10; // Shift right if clipping left edge
       if (x + r.width > window.innerWidth - 10) x = window.innerWidth - r.width - 10; // Shift left if clipping right edge
       
@@ -2989,7 +2990,6 @@
       if (url) HoverPreview.show(url, e);
     });
     inputEl.addEventListener('mouseleave', () => HoverPreview.hide());
-    inputEl.addEventListener('mousemove', e => HoverPreview.setPosition(e));
   });
 
   /* ── HTML escape (XSS safety) ── */
@@ -3071,7 +3071,6 @@
       if (urlSpan) {
         urlSpan.addEventListener('mouseenter', e => HoverPreview.show(item.url, e));
         urlSpan.addEventListener('mouseleave', () => HoverPreview.hide());
-        urlSpan.addEventListener('mousemove',  e => HoverPreview.setPosition(e));
       }
 
       li.querySelector('.playlist-item__drag')
