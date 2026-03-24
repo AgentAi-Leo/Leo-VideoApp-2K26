@@ -3,23 +3,26 @@ import SwiftUI
 /// Root view — shows playlist browser or jumps straight to player
 struct ContentView: View {
     @State private var playlistService = PlaylistService()
+    @State private var activeQueue: [VideoItem] = []
     @State private var isPlaying = false
-    @State private var startIndex: Int = 0
 
     var body: some View {
         NavigationStack {
-            if isPlaying, !playlistService.playlist.isEmpty {
+            if isPlaying, !activeQueue.isEmpty {
                 PlayerView(
-                    playlist: playlistService.playlist,
-                    startAt: startIndex,
-                    onExit: { isPlaying = false }
+                    playlist: activeQueue,
+                    startAt: 0,
+                    onExit: { 
+                        isPlaying = false
+                        activeQueue = []
+                    }
                 )
                 .ignoresSafeArea()
             } else {
                 PlaylistBrowserView(
                     service: playlistService,
-                    onPlay: { index in
-                        startIndex = index
+                    onPlayQueue: { queue in
+                        activeQueue = queue
                         isPlaying = true
                     }
                 )

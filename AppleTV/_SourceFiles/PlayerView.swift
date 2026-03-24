@@ -27,8 +27,8 @@ struct PlayerView: View {
                             Text(playerManager.currentTitle)
                                 .font(.headline)
                                 .foregroundColor(.white)
-                            if let creator = playerManager.currentCreator, !creator.isEmpty {
-                                Text(creator)
+                            if let desc = playerManager.currentDescription, !desc.isEmpty {
+                                Text(desc)
                                     .font(.subheadline)
                                     .foregroundColor(.white.opacity(0.7))
                             }
@@ -88,7 +88,7 @@ struct PlayerView: View {
 class PlayerManager {
     var currentIndex: Int = 0
     var currentTitle: String = ""
-    var currentCreator: String?
+    var currentDescription: String?
     var showingInfo: Bool = false
 
     // Mark player as non-observed since AVQueuePlayer isn't Observable-compatible
@@ -147,7 +147,7 @@ class PlayerManager {
         guard index < playlist.count else { return }
         currentIndex = index
         currentTitle = playlist[index].title
-        currentCreator = playlist[index].creator
+        currentDescription = playlist[index].description
     }
 
     /// Briefly show the now-playing info overlay (auto-hides after 4s)

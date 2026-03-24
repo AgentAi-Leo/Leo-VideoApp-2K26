@@ -3,45 +3,46 @@ import Observation
 
 /// A single video item in the playlist
 struct VideoItem: Identifiable, Codable {
-    let id: UUID
+    let id: String
+    let playlist: String
     let title: String
     let url: String
-    let creator: String?
-
-    init(id: UUID = UUID(), title: String, url: String, creator: String? = nil) {
-        self.id = id
-        self.title = title
-        self.url = url
-        self.creator = creator
-    }
+    let description: String?
+    let timestamp: String?
 
     /// Convenience: build a valid URL from the string
     var mediaURL: URL? { URL(string: url) }
 }
 
-/// Fetches playlist data from a published Google Sheet (JSON endpoint)
+struct PlaylistPayload: Codable {
+    let intro: [VideoItem]
+    let main: [VideoItem]
+    let outro: [VideoItem]
+}
+
+/// Fetches playlist data from the published API endpoint
 @MainActor
 @Observable
 class PlaylistService {
-    var playlist: [VideoItem] = []
+    var introVideos: [VideoItem] = []
+    var mainVideos: [VideoItem] = []
+    var outroVideos: [VideoItem] = []
+    
     var isLoading = false
     var errorMessage: String?
 
+    // Group main videos by their playlist name
+    var groupedPlaylists: [(name: String, videos: [VideoItem])] {
+        let grouped = Dictionary(grouping: mainVideos, by: { $0.playlist })
+        return grouped.sorted { $0.key < $1.key }
+    }
+
     // ── CONFIGURE THIS ──
-    // Replace with your published Google Sheet ID.
-    // The sheet should have columns: title | url | creator
-    // Publish via: File → Share → Publish to web → Sheet1 → TSV
-    //
-    // Or use the Google Sheets API v4 JSON endpoint:
-    // https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/Sheet1?key={API_KEY}
-    //
-    // For simplicity, we support a plain JSON endpoint that returns an array:
-    // [{"title": "...", "url": "...", "creator": "..."}]
-    private let playlistURL = "YOUR_GOOGLE_SHEET_JSON_ENDPOINT_HERE"
+    // Replace with your published Google Apps Script Web App URL
+    private let playlistURL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE"
 
     func fetchPlaylist() async {
         guard let url = URL(string: playlistURL) else {
-            // Fall back to demo playlist if no endpoint configured
             loadDemoPlaylist()
             return
         }
@@ -57,26 +58,10 @@ class PlaylistService {
                 throw URLError(.badServerResponse)
             }
 
-            // Try decoding as direct JSON array first
-            if let items = try? JSONDecoder().decode([VideoItem].self, from: data) {
-                playlist = items
-            }
-            // Try Google Sheets API v4 format: { "values": [["title","url","creator"], ...] }
-            else if let sheetsResponse = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                    let values = sheetsResponse["values"] as? [[String]] {
-                // Skip header row
-                playlist = values.dropFirst().compactMap { row in
-                    guard row.count >= 2, !row[1].isEmpty else { return nil }
-                    return VideoItem(
-                        title: row[0],
-                        url: row[1],
-                        creator: row.count > 2 ? row[2] : nil
-                    )
-                }
-            } else {
-                throw NSError(domain: "PlaylistService", code: 1,
-                              userInfo: [NSLocalizedDescriptionKey: "Unrecognized data format"])
-            }
+            let payload = try JSONDecoder().decode(PlaylistPayload.self, from: data)
+            introVideos = payload.intro
+            mainVideos = payload.main
+            outroVideos = payload.outro
 
         } catch {
             errorMessage = error.localizedDescription
@@ -86,18 +71,13 @@ class PlaylistService {
         isLoading = false
     }
 
-    /// Demo playlist for testing before Google Sheets is connected
+    /// Demo playlist
     private func loadDemoPlaylist() {
-        playlist = [
-            VideoItem(title: "Sample Video 1",
-                      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-                      creator: "Blender Foundation"),
-            VideoItem(title: "Sample Video 2",
-                      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-                      creator: "Blender Foundation"),
-            VideoItem(title: "Sample Video 3",
-                      url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4",
-                      creator: "Blender Foundation"),
+        introVideos = []
+        mainVideos = [
+            VideoItem(id: "demo1", playlist: "MAIN", title: "Sample Video 1", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", description: "Blender", timestamp: nil),
+            VideoItem(id: "demo2", playlist: "MAIN", title: "Sample Video 2", url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", description: "Blender", timestamp: nil)
         ]
+        outroVideos = []
     }
 }
