@@ -10,7 +10,7 @@ struct PlayerView: View {
     let startAt: Int
     let onExit: () -> Void
 
-    @StateObject private var playerManager = PlayerManager()
+    @State private var playerManager = PlayerManager()
 
     var body: some View {
         ZStack {
@@ -65,24 +65,39 @@ struct PlayerView: View {
         .onPlayPauseCommand {
             playerManager.togglePlayPause()
         }
+        .onMoveCommand { direction in
+            switch direction {
+            case .left:
+                playerManager.skipPrevious()
+            case .right:
+                playerManager.skipNext()
+            case .up:
+                // Restart entire playlist from beginning (Play All)
+                playerManager.rebuildQueue(from: 0)
+            default:
+                break
+            }
+        }
     }
 }
 
 // MARK: - PlayerManager (AVQueuePlayer orchestrator)
 
 @MainActor
-class PlayerManager: ObservableObject {
-    @Published var currentIndex: Int = 0
-    @Published var currentTitle: String = ""
-    @Published var currentCreator: String?
-    @Published var showingInfo: Bool = false
+@Observable
+class PlayerManager {
+    var currentIndex: Int = 0
+    var currentTitle: String = ""
+    var currentCreator: String?
+    var showingInfo: Bool = false
 
-    private(set) var player: AVQueuePlayer = AVQueuePlayer()
-    private var playlist: [VideoItem] = []
-    private var playerItems: [AVPlayerItem] = []   // parallel array to playlist (for index lookup)
-    private var cancellables = Set<AnyCancellable>()
-    private var infoTimer: Timer?
-    private var timeObserver: Any?
+    // Mark player as non-observed since AVQueuePlayer isn't Observable-compatible
+    @ObservationIgnored private(set) var player: AVQueuePlayer = AVQueuePlayer()
+    @ObservationIgnored private var playlist: [VideoItem] = []
+    @ObservationIgnored private var playerItems: [AVPlayerItem] = []
+    @ObservationIgnored private var currentItemObserver: NSKeyValueObservation?
+    @ObservationIgnored private var infoTimer: Timer?
+    @ObservationIgnored private var timeObserver: Any?
 
     // MARK: - Load & Start
 
@@ -106,24 +121,16 @@ class PlayerManager: ObservableObject {
             }
         }
 
-        // Track which index we're on using currentItem observation
-        player.publisher(for: \.currentItem)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] newItem in
-                guard let self = self, let newItem = newItem else { return }
+        // Track which index we're on using KVO (Swift 6 safe)
+        currentItemObserver = player.observe(\.currentItem, options: [.new]) { [weak self] _, change in
+            Task { @MainActor [weak self] in
+                guard let self = self, let newItem = change.newValue as? AVPlayerItem else { return }
                 if let idx = self.playerItems.firstIndex(of: newItem) {
                     self.currentIndex = idx
                     self.updateNowPlaying(index: idx)
                     self.flashInfo()
                 }
             }
-            .store(in: &cancellables)
-
-        // Periodic time observer for progress tracking (useful for future scrub bar)
-        let interval = CMTime(seconds: 1, preferredTimescale: 1)
-        timeObserver = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            _ = time // Reserved for future progress bar UI
-            _ = self
         }
 
         // Start playback
@@ -148,7 +155,7 @@ class PlayerManager: ObservableObject {
         showingInfo = true
         infoTimer?.invalidate()
         infoTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: false) { [weak self] _ in
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
                 self?.showingInfo = false
             }
         }
@@ -183,7 +190,7 @@ class PlayerManager: ObservableObject {
     }
 
     /// Rebuild the queue starting from a specific playlist index
-    private func rebuildQueue(from index: Int) {
+    func rebuildQueue(from index: Int) {
         player.pause()
         player.removeAllItems()
 
@@ -212,7 +219,8 @@ class PlayerManager: ObservableObject {
     func tearDown() {
         player.pause()
         player.removeAllItems()
-        cancellables.removeAll()
+        currentItemObserver?.invalidate()
+        currentItemObserver = nil
         infoTimer?.invalidate()
         if let observer = timeObserver {
             player.removeTimeObserver(observer)

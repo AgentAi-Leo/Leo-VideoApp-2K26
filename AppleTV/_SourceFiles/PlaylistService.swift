@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// A single video item in the playlist
 struct VideoItem: Identifiable, Codable {
@@ -20,10 +21,11 @@ struct VideoItem: Identifiable, Codable {
 
 /// Fetches playlist data from a published Google Sheet (JSON endpoint)
 @MainActor
-class PlaylistService: ObservableObject {
-    @Published var playlist: [VideoItem] = []
-    @Published var isLoading = false
-    @Published var errorMessage: String?
+@Observable
+class PlaylistService {
+    var playlist: [VideoItem] = []
+    var isLoading = false
+    var errorMessage: String?
 
     // ── CONFIGURE THIS ──
     // Replace with your published Google Sheet ID.

@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Root view — shows playlist browser or jumps straight to player
 struct ContentView: View {
-    @StateObject private var playlistService = PlaylistService()
+    @State private var playlistService = PlaylistService()
     @State private var isPlaying = false
     @State private var startIndex: Int = 0
 

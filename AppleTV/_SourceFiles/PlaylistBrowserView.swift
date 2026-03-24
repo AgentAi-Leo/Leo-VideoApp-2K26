@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Playlist browser — shows all videos, lets user tap to start playback
 struct PlaylistBrowserView: View {
-    @ObservedObject var service: PlaylistService
+    var service: PlaylistService
     let onPlay: (Int) -> Void    // passes the selected index
 
     @State private var selectedIndex: Int = 0
