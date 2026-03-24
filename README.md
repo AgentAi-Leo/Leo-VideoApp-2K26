@@ -109,7 +109,7 @@ ADDS vers-L
    - Added Apple TVOS Companion LeoTV_Companion App Using AVQueuePlayer Via Xcode
    - Updated Web App Name To LeoTV And TVos App Name To LeoTV_Companion
    - COMING SOON:
-   - Updated LeoTV AndLeoTV_Companion App To Use Google Sheets API For Playlist (Should Eliminate Flash Issues)
+   - Updated LeoTV And LeoTV_Companion App To Use Google Sheets API For Playlist (Should Eliminate Flash Issues)
 
    
 
