@@ -120,8 +120,8 @@ ADDS vers-L
   - LOOKS AND WORKS AWESOME!!! 
 
  ADDS vers-U (COMING NEXT)
-  - Add Additional UI Polish & Features
   - Add Google Sheets API Integration For Playlist
+  - Add Additional UI Polish & Features
   
 
    
