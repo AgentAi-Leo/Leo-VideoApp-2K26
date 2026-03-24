@@ -105,10 +105,10 @@ ADDS vers-L
    - LOOKS & WORKS AWESOME - GREAT SIZE (ONLY IN ZEN FIREFOX)!!! 
  
  ADDS vers-S 
-   - Added Airplay Support Via Safari But Nasty Unavoidable Playback Flashing Issues
+   - Added Airplay Support Via Safari But Nasty Unavoidable       Playback Flashing Issues - WILL NEVER WORK SEAMLESSY WITH AIRPLAY SO CREATING NATIVE APP FOR APPLE TV TO SMOOTH PLAYBACK!!!
    - Added Apple TVOS Companion LeoTV_Companion App Using AVQueuePlayer Via Xcode
    - Updated Web App Name To LeoTV And TVos App Name To LeoTV_Companion
-   - PRE - APPLE TV COMPANION APP ---- USE AS LAST IF NEEDED!!!
+   - NOW COMPLETE! AND WORKING!!
    
  ADDS vers-T
   - Building Xcode App - LeoTV_Companion Using SwiftUI - First Xcode/Swift App Ever! 'Grats to Me (2K26)
