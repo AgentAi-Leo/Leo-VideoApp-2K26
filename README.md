@@ -106,7 +106,7 @@ ADDS vers-L
  
  ADDS vers-S 
    - Added Airplay Support Via Safari But Nasty Unavoidable Playback Flashing Issues
-   - Added Apple TVOS Companion LeoTV-Companion App Using AVQueuePlayer Via Xcode
+   - Added Apple TVOS Companion LeoTV_Companion App Using AVQueuePlayer Via Xcode
 
    
 

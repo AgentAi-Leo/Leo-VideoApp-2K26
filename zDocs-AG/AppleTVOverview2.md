@@ -1,4 +1,4 @@
-# LeoTV-Companion — tvOS App Build Summary
+# LeoTV_Companion — tvOS App Build Summary
 
 ## Project Structure
 
@@ -6,8 +6,8 @@
 AppleTV/
 ├── README.md                    ← Setup instructions
 ├── Package.swift                ← Swift package manifest
-└── LeoTVCompanion/
-    ├── LeoTVCompanion.swift           ← App entry point
+└── LeoTV_Companion/
+    ├── LeoTV_Companion.swift           ← App entry point
     ├── ContentView.swift        ← Root navigation
     ├── PlayerView.swift         ← ⭐ AVQueuePlayer (gapless playback core)
     ├── PlaylistBrowserView.swift ← Playlist UI for Siri Remote
@@ -20,7 +20,7 @@ AppleTV/
 
 | File | Purpose |
 |------|---------|
-| `LeoTVCompanion.swift` | SwiftUI `@main` app entry point |
+| `LeoTV_Companion.swift` | SwiftUI `@main` app entry point |
 | `ContentView.swift` | Root view — switches between playlist browser and player |
 | `PlayerView.swift` | **Core** — `AVQueuePlayer` with gapless transitions, now-playing overlay, Siri Remote support |
 | `PlaylistBrowserView.swift` | tvOS-native playlist UI with focus states, Play All button, refresh |
@@ -35,8 +35,8 @@ AppleTV/
 
 ## Next Steps to Build
 
-1. **Xcode → File → New → Project → tvOS → App** (SwiftUI, name: `LeoTVCompanion`)
-2. Replace generated files with the ones in `AppleTV/LeoTVCompanion/`
+1. **Xcode → File → New → Project → tvOS → App** (SwiftUI, name: `LeoTV_Companion`)
+2. Replace generated files with the ones in `AppleTV/LeoTV_Companion/`
 3. Build & Run on Apple TV (or tvOS Simulator first)
 4. To connect to your playlists: edit `PlaylistService.swift` line 39 with your Google Sheets endpoint
 
