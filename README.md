@@ -112,8 +112,8 @@ ADDS vers-L
    
  ADDS vers-T
   - Building Xcode App - LeoTV_Companion Using SwiftUI - First Xcode/Swift App Ever! 'Grats to Me (2K26)
-  - AppleTV Companion App - Now Working!!!
-  - COMING SOON:
+  - AppleTV Companion App - Now Working Without NASTY FLASHES!!!
+  - COMING SOON/NEXT UP:
   - Updated LeoTV And LeoTV_Companion App To Use Google Sheets API For Playlist To Eliminate Flash Issues Caused By Safari When Using Airplay
    
 
