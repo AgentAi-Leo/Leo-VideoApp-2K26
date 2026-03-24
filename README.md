@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-T
+# VideoApp - v1 - vers-U
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -115,6 +115,15 @@ ADDS vers-L
   - AppleTV Companion App - Now Working Without NASTY FLASHES!!!
   - COMING SOON/NEXT UP:
   - Updated LeoTV And LeoTV_Companion App To Use Google Sheets API For Playlist To Eliminate Flash Issues Caused By Safari When Using Airplay
+  - Renamed AppleTV Companion App To LeoTV Player
+  - Added Apple TV Icon   
+  - LOOKS AND WORKS AWESOME!!! 
+
+ ADDS vers-U (COMING NEXT)
+  - Add Additional UI Polish & Features
+  - Add Google Sheets API Integration For Playlist
+  
+
    
 
 
