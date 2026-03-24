@@ -1,4 +1,5 @@
-> **LeoTV** and **LeoTV_Companion** play user-defined playlists with dedicated **Intro**, **Main**, and **Outro** sections — seamlessly queued for continuous, gapless viewing. Supports video (`.mp4`, `.mov`, `.m4v`, `.m3u8`) and audio (`.mp3`, `.m4a`, `.wav`, `.flac`) up to **4K HDR** on Apple TV. LeoTV streams from any browser; LeoTV_Companion delivers native Siri Remote controls and hardware-accelerated playback on Apple TV 4K.
+> **LeoTV** and **LeoTV_Companion** play user-defined playlists with dedicated **Intro**, **Main**, and **Outro** sections — seamlessly queued for continuous, gapless viewing. Supports video (`.mp4`, `.mov`, `.m4v`, `.m3u8`) and audio (`.mp3`, `.m4a`, `.wav`, `.flac`) up to **4K HDR** on Apple TV. LeoTV streams from any browser; LeoTV_Companion delivers native Siri Remote controls and hardware-accelerated playback on Apple TV 4K. - APPROVED
+
 # Video & Audio Support — LeoTV Apps
 
 ## LeoTV (Web App — `video-app.html`)
