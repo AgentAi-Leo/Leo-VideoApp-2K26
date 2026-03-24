@@ -31,10 +31,9 @@ class PlaylistService {
     var isLoading = false
     var errorMessage: String?
 
-    // Group main videos by their playlist name
-    var groupedPlaylists: [(name: String, videos: [VideoItem])] {
-        let grouped = Dictionary(grouping: mainVideos, by: { $0.playlist })
-        return grouped.sorted { $0.key < $1.key }
+    // Linear queue for Apple TV automated sync
+    var unifiedPlaylist: [VideoItem] {
+        return introVideos + mainVideos + outroVideos
     }
 
     // ── CONFIGURE THIS ──

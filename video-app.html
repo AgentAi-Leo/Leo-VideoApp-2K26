@@ -1299,6 +1299,20 @@
     }
 
     .ctrl-btn--xl:active::after { opacity: 1; }
+
+    /* ═══════════════════════════════════════════════════
+       STRIPED PROGRESS BAR (Indeterminate)
+    ═══════════════════════════════════════════════════ */
+    @keyframes flow-stripe {
+      0% { background-position: 0 0; }
+      100% { background-position: 40px 0; }
+    }
+    .progress-bar-striped {
+      background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent);
+      background-size: 40px 40px;
+      animation: flow-stripe 1s linear infinite;
+      background-color: #4ade80;
+    }
   </style>
 </head>
 
@@ -1517,6 +1531,24 @@
 
         <!-- ── Sub-panel: PLAYLIST ── -->
         <div id="create-sub-playlist" class="create-subpanel create-subpanel--active" style="width:100%;max-width:2400px;margin-left:auto;margin-right:auto">
+
+          <!-- ═════ APPLE TV SYNC UI ═════ -->
+          <div style="margin: 2em 16px 0; display:flex; flex-direction:column; align-items:center; gap:16px; background: rgba(124,106,247,0.05); padding: 24px; border-radius: 16px; border: 1px solid rgba(124,106,247,0.2); max-width: 600px; margin-left: auto; margin-right: auto;">
+            <label style="display:flex;align-items:center;gap:12px;cursor:pointer;font-size:1.1rem;font-weight:600;color:var(--text);user-select:none;">
+              <input type="checkbox" id="chk-appletv-sync" style="width:20px;height:20px;accent-color:#7c6af7;cursor:pointer" />
+              🛜 Apple TV Compatible
+            </label>
+            
+            <div id="appletv-export-ui" style="display:none; flex-direction:column; align-items:center; gap:16px; width: 100%; margin-top: 8px;">
+              <input id="export-filename" class="text-input" type="text" placeholder="Enter playlist file name (e.g. Action_Playlist)" style="width: 100%; max-width: 300px; text-align: center; border-radius: 8px; padding: 10px;" />
+              <button id="btn-export-tv" class="btn btn--primary" style="width: 100%; max-width: 300px; background: #7c6af7;">EXPORT APPLE TV PLAYLIST</button>
+              
+              <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top: 4px;">
+                <a href="https://drive.google.com" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#1a73e8;color:#fff;padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;text-decoration:none;font-family:sans-serif;">📁 Google Drive</a>
+                <a href="https://docs.google.com/spreadsheets/" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#0f9d58;color:#fff;padding:5px 14px;border-radius:20px;font-size:13px;font-weight:600;text-decoration:none;font-family:sans-serif;">📊 Google Sheet</a>
+              </div>
+            </div>
+          </div>
 
           <!-- PREVIEW + CLEAR ALL + LOOP -->
           <div style="margin: 4.5em 16px 3em; display:flex; justify-content:center; gap:16px; flex-wrap:wrap">
@@ -1761,6 +1793,31 @@
          GLOBAL TOAST NOTIFICATION
     ─────────────────────────────────────────── -->
     <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true"></div>
+
+    <!-- ═══════════════════════════════════════════════════
+         APPLE TV SYNC SUCCESS MODAL
+    ═══════════════════════════════════════════════════ -->
+    <div id="tv-sync-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:9999; flex-direction:column; align-items:center; justify-content:center; padding: 20px; backdrop-filter: blur(4px);">
+      <div style="background: var(--panel-bg); backdrop-filter: blur(var(--glass-blur)); border: 1px solid var(--glass-border); border-radius: 16px; padding: 40px; text-align: center; max-width: 500px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
+         <h2 id="tv-sync-header" style="color: #f59e0b; margin-bottom: 16px; font-size: 2.2rem; font-weight: 800; letter-spacing: 0.05em;">PROCESSING...</h2>
+         <p id="tv-sync-msg" style="color: var(--text); font-size: 1.25rem; margin-bottom: 30px; font-weight: 500;">Initializing sync pipeline...</p>
+         
+         <div id="tv-sync-progress" style="width: 100%; background: rgba(255,255,255,0.05); border-radius: 8px; height: 16px; overflow: hidden; position: relative; margin-bottom: 8px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.3);">
+            <div id="tv-sync-progress-bar" style="width: 0%; height: 100%; border-radius: 8px; background-color: #4ade80; transition: width 0.4s ease;"></div>
+         </div>
+         <p id="tv-sync-progress-text" style="color: #4ade80; font-size: 1rem; font-weight: 700; text-align: right; margin-bottom: 24px;">0%</p>
+         
+         <div id="tv-sync-success-elements" style="display:none;">
+             <p style="color: var(--text-3); font-size: 0.95rem; line-height: 1.5; margin-bottom: 12px;">✅ Master files perfectly synced with Apple TV database!</p>
+             <p style="color: var(--accent-2); font-size: 0.95rem; line-height: 1.5; font-weight: 600;">Check your Terminal window to view the permanent Google Drive links and raw diagnostic data.</p>
+         </div>
+         
+         <div style="display:flex; gap:16px; margin-top: 36px; width: 100%;">
+            <button class="btn btn--danger" style="flex:1; padding: 14px 0; font-size: 1.1rem; letter-spacing: 0.05em;" id="btn-cancel-tv-sync">CANCEL</button>
+            <button class="btn btn--primary" style="flex:1; padding: 14px 0; font-size: 1.1rem; letter-spacing: 0.05em;" onclick="document.getElementById('tv-sync-modal').style.display='none'">GOT IT, HIDE</button>
+         </div>
+      </div>
+    </div>
 
   </div>
   <!-- /app -->
@@ -3443,6 +3500,135 @@
   });
 
   // PREVIEW — restart from top and switch to Home
+  // APPLE TV SYNC TOGGLE
+  $('chk-appletv-sync').addEventListener('change', e => {
+    $('appletv-export-ui').style.display = e.target.checked ? 'flex' : 'none';
+  });
+
+  // CANCEL EXPORT
+  $('btn-cancel-tv-sync').addEventListener('click', async () => {
+    try {
+      const res = await fetch('http://localhost:8080/cancel', { method: 'POST' });
+      if (res.ok) {
+        $('tv-sync-msg').innerText = 'Export Forcefully Cancelled.';
+        $('tv-sync-progress').style.display = 'none';
+        showToast('Export Terminated by user.');
+        setTimeout(() => {
+          $('tv-sync-modal').style.display = 'none';
+          $('tv-sync-progress').style.display = 'block'; // reset
+        }, 1500);
+      }
+    } catch(err) {
+      showToast('Error trying to cancel export.');
+    }
+  });
+
+  // AUDIO FEEDBACK
+  const successAudio = new Audio('assets/success_pop.mp3');
+  successAudio.volume = 0.5;
+  // If test.mp3 isn't exactly the pop they wanted, we fall back gracefully.
+
+  // POLL EXPORT STATUS
+  let wasRunning = false;
+  setInterval(async () => {
+    if (!$('chk-appletv-sync').checked) return;
+    try {
+      const res = await fetch('http://localhost:8080/status');
+      if (res.ok) {
+        const data = await res.json();
+        const btn = $('btn-export-tv');
+        
+        if (data.running) {
+          wasRunning = true;
+          // Setup button
+          btn.innerText = 'EXPORT IN PROGRESS... (CLICK TO VIEW)';
+          btn.style.background = '#f59e0b';
+          btn.dataset.isrunning = 'true';
+          
+          // Setup Modal UI
+          $('tv-sync-header').innerText = 'PROCESSING...';
+          $('tv-sync-header').style.color = '#f59e0b';
+          $('tv-sync-msg').innerText = data.msg || 'Processing in background...';
+          $('tv-sync-success-elements').style.display = 'none';
+          
+          // Render Math Bar
+          let pct = data.pct || 0;
+          $('tv-sync-progress-bar').style.width = pct + '%';
+          $('tv-sync-progress-text').innerText = pct + '%';
+          
+        } else {
+          // Setup Button Normal
+          btn.innerText = 'EXPORT APPLE TV PLAYLIST';
+          btn.style.background = '#7c6af7';
+          btn.dataset.isrunning = 'false';
+          
+          // Trigger Success States if it just newly finished
+          if (wasRunning && data.pct >= 100) {
+            wasRunning = false;
+            
+            // Audio Chime
+            successAudio.play().catch(e => console.log('Audio blocked', e));
+            
+            // Update UI to final success state
+            $('tv-sync-header').innerText = 'SUCCESS!';
+            $('tv-sync-header').style.color = '#4ade80';
+            $('tv-sync-msg').innerText = 'Apple TV Sync Pipeline Complete!';
+            $('tv-sync-progress-bar').style.width = '100%';
+            $('tv-sync-progress-text').innerText = '100%';
+            $('tv-sync-success-elements').style.display = 'block';
+            
+            // Force modal front and center if they hid it
+            $('tv-sync-modal').style.display = 'flex';
+          }
+        }
+      }
+    } catch(e) {}
+  }, 1000);
+
+  // EXPORT APPLE TV PLAYLIST
+  $('btn-export-tv').addEventListener('click', async () => {
+    if ($('btn-export-tv').dataset.isrunning === 'true') {
+      $('tv-sync-modal').style.display = 'flex';
+      return;
+    }
+    
+    const filenameInput = $('export-filename').value.trim() || 'apple_tv_sync';
+    
+    const payload = {
+      filename: filenameInput,
+      data: {
+        intro: State.introPlaylist,
+        main: State.playlist,
+        outro: State.outroPlaylist
+      }
+    };
+    
+    showToast('Sending playlist to local Python Server...');
+    
+    try {
+      const response = await fetch('http://localhost:8080/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (response.ok) {
+        $('tv-sync-header').innerText = 'PROCESSING...';
+        $('tv-sync-header').style.color = '#f59e0b';
+        $('tv-sync-msg').innerText = `Building Pipeline for ${filenameInput}.json...`;
+        $('tv-sync-progress-bar').style.width = '0%';
+        $('tv-sync-progress-text').innerText = '0%';
+        $('tv-sync-success-elements').style.display = 'none';
+        $('tv-sync-modal').style.display = 'flex';
+      } else {
+        showToast('Error: Server returned bad response.');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error: Python server (leotv_server.py) is not running!');
+    }
+  });
+
   $('btn-preview').addEventListener('click', () => {
     const queue = buildQueue();
     if (queue.length === 0) { showToast('Add videos first'); return; }
