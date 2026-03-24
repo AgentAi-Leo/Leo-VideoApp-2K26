@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct ViewerApp: App {
+struct LeoTVCompanionApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

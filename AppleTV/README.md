@@ -1,4 +1,4 @@
-# Viewer App — tvOS Companion App
+# LeoTV-Companion — tvOS Companion App
 
 A minimal tvOS app that plays video playlists **seamlessly** on Apple TV using `AVQueuePlayer`. No AirPlay, no gaps, no screensaver flash.
 
@@ -8,7 +8,7 @@ A minimal tvOS app that plays video playlists **seamlessly** on Apple TV using `
 1. Open **Xcode → File → New → Project**
 2. Choose **tvOS → App**
 3. Settings:
-   - Product Name: `ViewerApp`
+   - Product Name: `LeoTVCompanion`
    - Team: Your Apple ID
    - Organization Identifier: `com.yourname` (anything works)
    - Interface: **SwiftUI**
@@ -16,9 +16,9 @@ A minimal tvOS app that plays video playlists **seamlessly** on Apple TV using `
 4. Save to: `AppleTV/` folder (overwrite/replace the existing folder)
 
 ### 2. Replace the generated source files
-Xcode will generate boilerplate files. **Replace them** with the files already in `ViewerApp/`:
-- Delete Xcode's auto-generated `ContentView.swift` and `ViewerApp.swift`
-- Drag all `.swift` files from this `ViewerApp/` folder into the Xcode project navigator
+Xcode will generate boilerplate files. **Replace them** with the files already in `LeoTVCompanion/`:
+- Delete Xcode's auto-generated `ContentView.swift` and `LeoTVCompanion.swift`
+- Drag all `.swift` files from this `LeoTVCompanion/` folder into the Xcode project navigator
 
 ### 3. Configure your playlist source
 Edit `PlaylistService.swift` line 39:
@@ -69,7 +69,7 @@ function doGet() {
 
 | File | Purpose |
 |------|---------|
-| `ViewerApp.swift` | App entry point |
+| `LeoTVCompanion.swift` | App entry point |
 | `ContentView.swift` | Root navigation (browser ↔ player) |
 | `PlayerView.swift` | **AVQueuePlayer** — gapless seamless playback |
 | `PlaylistBrowserView.swift` | Playlist UI with Siri Remote navigation |

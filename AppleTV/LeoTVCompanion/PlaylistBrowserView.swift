@@ -13,7 +13,7 @@ struct PlaylistBrowserView: View {
             // Header
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Viewer App")
+                    Text("LeoTV-Companion")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                         .foregroundColor(.white)

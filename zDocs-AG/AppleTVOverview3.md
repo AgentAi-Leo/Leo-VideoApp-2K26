@@ -4,17 +4,17 @@
 
 The simplest approach: **create the Xcode project first**, then drag just the 5 `.swift` files into the project navigator.
 
-When you create a new tvOS project in Xcode (File → New → Project → tvOS → App, name it `ViewerApp`), Xcode auto-generates its own `ContentView.swift` and `ViewerAppApp.swift`. You'd:
+When you create a new tvOS project in Xcode (File → New → Project → tvOS → App, name it `LeoTVCompanion`), Xcode auto-generates its own `ContentView.swift` and `LeoTVCompanionApp.swift`. You'd:
 
-1. **Delete** Xcode's auto-generated `ContentView.swift` and `ViewerAppApp.swift`
+1. **Delete** Xcode's auto-generated `ContentView.swift` and `LeoTVCompanionApp.swift`
 2. **Drag these 5 files** from Finder into the Xcode project navigator:
-   - `ViewerApp.swift`
+   - `LeoTVCompanion.swift`
    - `ContentView.swift`
    - `PlayerView.swift`
    - `PlaylistBrowserView.swift`
    - `PlaylistService.swift`
 
-You **don't** need to drag the whole `ViewerApp/` folder because Xcode creates its own `Assets.xcassets`, `Info.plist`, and project structure. Dragging the whole folder would create conflicts with Xcode's auto-generated assets.
+You **don't** need to drag the whole `LeoTVCompanion/` folder because Xcode creates its own `Assets.xcassets`, `Info.plist`, and project structure. Dragging the whole folder would create conflicts with Xcode's auto-generated assets.
 
 **TL;DR:** Create Xcode project first → delete its 2 boilerplate `.swift` files → drag in our 5 `.swift` files. That's it.
 

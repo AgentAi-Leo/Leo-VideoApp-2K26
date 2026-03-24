@@ -3,20 +3,20 @@
 import PackageDescription
 
 let package = Package(
-    name: "ViewerApp",
+    name: "LeoTVCompanion",
     platforms: [
         .tvOS(.v17)
     ],
     products: [
         .library(
-            name: "ViewerApp",
-            targets: ["ViewerApp"]
+            name: "LeoTVCompanion",
+            targets: ["LeoTVCompanion"]
         ),
     ],
     targets: [
         .target(
-            name: "ViewerApp",
-            path: "ViewerApp"
+            name: "LeoTVCompanion",
+            path: "LeoTVCompanion"
         ),
     ]
 )
