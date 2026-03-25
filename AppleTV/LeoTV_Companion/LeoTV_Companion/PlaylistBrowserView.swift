@@ -138,6 +138,7 @@ struct PlaylistBrowserView: View {
             }
         }
         .background(Color.black)
+        .defaultFocus($focusedField, .playAll)
         .onAppear {
             // Because ContentView explicitly destroys and recreates this view via the 'isPlaying' boolean,
             // .onChange will mathematically never fire. We MUST hijack the focus state the absolute nanosecond the view mounts!
@@ -157,15 +158,6 @@ struct PlaylistBrowserView: View {
             // Auto-refresh playlist identically to a manual refresh whenever the app launches
             if service.playlist.isEmpty {
                 await service.fetchPlaylist()
-            }
-        }
-        .onChange(of: service.isLoading) { _, loading in
-            // Boot sequence: When the initial API fetch concludes, officially magnetize the cursor to "Play All"
-            if !loading && !service.playlist.isEmpty && focusedField == nil {
-                // Must provide a microscopic delay so tvOS can physically mount the button geometry before the cursor seeks it
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    focusedField = .playAll
-                }
             }
         }
     }
