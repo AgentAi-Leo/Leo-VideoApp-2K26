@@ -109,7 +109,7 @@ class PlayerManager {
             object: nil,
             queue: .main
         ) { [weak self] notification in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
                 guard let self = self else { return }
                 // Verify this notification belongs strictly to the video we are currently playing
                 guard let item = notification.object as? AVPlayerItem, item == self.player.currentItem else { return }
