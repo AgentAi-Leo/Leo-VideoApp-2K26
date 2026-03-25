@@ -15,6 +15,7 @@ struct PlaylistBrowserView: View {
         case muteToggle
         case row(Int)
         case bottomWrapTracker
+        case topWrapTracker
     }
     @FocusState private var focusedField: FocusTarget?
     
@@ -119,6 +120,14 @@ struct PlaylistBrowserView: View {
             else {
                 ScrollView {
                     LazyVStack(spacing: 2, pinnedViews: [.sectionHeaders]) { // Reduced 75% from 8
+                        // Invisible Top-Wrap Anchor
+                        Button(action: {}) {
+                            Color.black.opacity(0.01)
+                                .frame(height: 1)
+                        }
+                        .buttonStyle(.plain)
+                        .focused($focusedField, equals: .topWrapTracker)
+
                         ForEach(sections, id: \.name) { section in
                             Section(header:
                                 Text(section.name)
@@ -190,8 +199,8 @@ struct PlaylistBrowserView: View {
             }
         }
         .onChange(of: focusedField) { _, newValue in
-            // Intercept downwards scroll vector from final video and loop to top
-            if newValue == .bottomWrapTracker {
+            // Intercept vertical scroll vectors at the boundaries of the list to intelligently snap to Play All
+            if newValue == .bottomWrapTracker || newValue == .topWrapTracker {
                 focusedField = .playAll
             }
         }
