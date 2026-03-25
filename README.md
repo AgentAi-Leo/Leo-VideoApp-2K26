@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-V
+# VideoApp - v1 - vers-W
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -165,6 +165,11 @@ ADDS vers-V
 - Fix Various Playback Logic And Improved UI Details/Issues 
 - Added Global AUDIO ON/OFF Functionality
 - WORKS REALLY GREAT BUT WANT TO IMPOROVE USER EXPERIENCE AND FIX MINOR ISSUES!
+
+
+## ----
+ADDS vers-W
+
 
 
 
