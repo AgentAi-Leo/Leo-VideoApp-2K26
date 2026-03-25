@@ -134,8 +134,9 @@ ADDS vers-U
   - Added JUMP To PLAY ALL After Refresh
   - Added Remember Last Video Upon Exit
   - Fixed Video FreeFrames While Progress Bar Moves
-  - Remove Source Video Path From TITLE Display 
-  
+  - Remove Source Video Path From TITLE Display
+  --- 
+
 
 
 
