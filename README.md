@@ -160,8 +160,7 @@ I'm ready to tackle your minor UI annoyances whenever you are! Let me know what 
 
 ## vers-U --->IS SURPRISINGLY WORKING REALLY GREAT NOW - NO MORE FLASHING - NO MORE STUTTERING - NO MORE GLITCHES - JUST PURE SEAMLESS PLAYBACK!!! GUESS SINCE WE ARE PLAYING ACTUAL FILES FROM HARD DRIVE THIS APPROACH IS SUDDENLY THE BEST METHOD!
 
-- 
-
+  
 ADDS vers-V 
 - Fix Various Playback Logic And Improved UI Details/Issues 
 - Added Global AUDIO ON/OFF Functionality
