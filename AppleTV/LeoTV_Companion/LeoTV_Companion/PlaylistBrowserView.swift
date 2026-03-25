@@ -118,7 +118,7 @@ struct PlaylistBrowserView: View {
             // Playlist
             else {
                 ScrollView {
-                    LazyVStack(spacing: 2, pinnedViews: [.sectionHeaders]) { // Reduced 75% from 8
+                    LazyVStack(spacing: 2) { // Reduced 75% from 8
                         ForEach(sections, id: \.name) { section in
                             Section(header:
                                 Text(section.name)
