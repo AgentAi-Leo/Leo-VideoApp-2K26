@@ -54,6 +54,13 @@ struct PlaylistBrowserView: View {
                 }
                 Spacer()
 
+                // Play All button (starts from index 0)
+                Button(action: { onPlay(0, isMuted) }) {
+                    Label("Play All", systemImage: "play.fill")
+                }
+                .buttonStyle(HeaderButtonStyle())
+                .focused($focusedField, equals: .playAll)
+
                 // Refresh button
                 Button(action: {
                     Task { 
@@ -65,13 +72,6 @@ struct PlaylistBrowserView: View {
                 }
                 .buttonStyle(HeaderButtonStyle())
                 .focused($focusedField, equals: .refresh)
-
-                // Play All button (starts from index 0)
-                Button(action: { onPlay(0, isMuted) }) {
-                    Label("Play All", systemImage: "play.fill")
-                }
-                .buttonStyle(HeaderButtonStyle())
-                .focused($focusedField, equals: .playAll)
                 
                 // Audio Toggle
                 Button(action: { isMuted.toggle() }) {
