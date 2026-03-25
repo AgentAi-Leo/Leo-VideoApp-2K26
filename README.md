@@ -164,6 +164,7 @@ I'm ready to tackle your minor UI annoyances whenever you are! Let me know what 
 
 ADDS vers-V 
 - Fix Various Playback Logic And Improved UI Details/Issues 
+- Added Global MUTED Audio Toggle Next To PLAY ALL Button
 
 
 

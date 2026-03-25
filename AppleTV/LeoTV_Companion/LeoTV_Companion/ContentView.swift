@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var isPlaying = false
     @State private var startIndex: Int = 0
     @State private var returnFocusIndex: Int?
+    @State private var isMuted: Bool = false
 
     var body: some View {
         NavigationStack {
@@ -13,6 +14,7 @@ struct ContentView: View {
                 PlayerView(
                     playlist: playlistService.playlist,
                     startAt: startIndex,
+                    isMuted: isMuted,
                     onExit: { lastIndex in 
                         if lastIndex == playlistService.playlist.count - 1 {
                             returnFocusIndex = -1 // Magic integer triggering 'Play All' focus reset
@@ -27,8 +29,9 @@ struct ContentView: View {
                 PlaylistBrowserView(
                     service: playlistService,
                     returnFocusIndex: $returnFocusIndex,
-                    onPlay: { index in
+                    onPlay: { index, muted in
                         startIndex = index
+                        isMuted = muted
                         isPlaying = true
                     }
                 )

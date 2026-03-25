@@ -4,13 +4,15 @@ import SwiftUI
 struct PlaylistBrowserView: View {
     var service: PlaylistService
     @Binding var returnFocusIndex: Int?
-    let onPlay: (Int) -> Void    // passes the selected index
+    let onPlay: (Int, Bool) -> Void    // passes the selected index and mute state
 
     @State private var selectedIndex: Int = 0
+    @State private var isMuted: Bool = false
     
     enum FocusTarget: Hashable {
         case refresh
         case playAll
+        case muteToggle
         case row(Int)
     }
     @FocusState private var focusedField: FocusTarget?
@@ -65,11 +67,21 @@ struct PlaylistBrowserView: View {
                 .focused($focusedField, equals: .refresh)
 
                 // Play All button (starts from index 0)
-                Button(action: { onPlay(0) }) {
+                Button(action: { onPlay(0, isMuted) }) {
                     Label("Play All", systemImage: "play.fill")
                 }
                 .buttonStyle(HeaderButtonStyle())
                 .focused($focusedField, equals: .playAll)
+                
+                // Muted Checkbox
+                Button(action: { isMuted.toggle() }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: isMuted ? "checkmark.square.fill" : "square")
+                        Text("MUTED")
+                    }
+                }
+                .buttonStyle(HeaderButtonStyle(focusColor: .cyan))
+                .focused($focusedField, equals: .muteToggle)
             }
             .padding(.horizontal, 60)
             .padding(.top, 40)
@@ -118,7 +130,7 @@ struct PlaylistBrowserView: View {
                                 ForEach(section.items, id: \.element.id) { pair in
                                     Button(action: {
                                         selectedIndex = pair.offset
-                                        onPlay(pair.offset)
+                                        onPlay(pair.offset, isMuted)
                                     }) {
                                         PlaylistRow(
                                             item: pair.element,
@@ -272,10 +284,9 @@ struct PlaylistRowButtonStyle: ButtonStyle {
 /// Custom button style for the header buttons (Refresh, Play All) to dynamically toggle between White / Cyan states
 struct HeaderButtonStyle: ButtonStyle {
     @Environment(\.isFocused) var isFocused
+    var focusColor: Color = Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0)
 
     func makeBody(configuration: Configuration) -> some View {
-        let customGreen = Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0)
-        
         configuration.label
             .font(.headline)
             .foregroundColor(.white)
@@ -283,8 +294,8 @@ struct HeaderButtonStyle: ButtonStyle {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isFocused ? customGreen : Color.white.opacity(0.15))
-                    .shadow(color: isFocused ? customGreen.opacity(0.4) : .clear, radius: 8, y: 4)
+                    .fill(isFocused ? focusColor : Color.white.opacity(0.15))
+                    .shadow(color: isFocused ? focusColor.opacity(0.4) : .clear, radius: 8, y: 4)
             )
             .scaleEffect(isFocused ? 1.05 : 1.0)
             .animation(.easeOut(duration: 0.2), value: isFocused)

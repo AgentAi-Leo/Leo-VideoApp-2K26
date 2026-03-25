@@ -8,6 +8,7 @@ import Combine
 struct PlayerView: View {
     let playlist: [VideoItem]
     let startAt: Int
+    let isMuted: Bool
     let onExit: (Int) -> Void
 
     @State private var playerManager = PlayerManager()
@@ -47,6 +48,7 @@ struct PlayerView: View {
             }
         }
         .onAppear {
+            playerManager.player.isMuted = isMuted
             playerManager.onQueueFinished = {
                 onExit(playerManager.currentIndex)
             }
