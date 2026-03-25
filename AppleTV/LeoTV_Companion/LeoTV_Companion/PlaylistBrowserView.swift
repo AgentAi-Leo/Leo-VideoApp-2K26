@@ -14,8 +14,6 @@ struct PlaylistBrowserView: View {
         case playAll
         case muteToggle
         case row(Int)
-        case bottomWrapTracker
-        case topWrapTracker
     }
     @FocusState private var focusedField: FocusTarget?
     
@@ -120,14 +118,6 @@ struct PlaylistBrowserView: View {
             else {
                 ScrollView {
                     LazyVStack(spacing: 2, pinnedViews: [.sectionHeaders]) { // Reduced 75% from 8
-                        // Invisible Top-Wrap Anchor
-                        Button(action: {}) {
-                            Color.black.opacity(0.01)
-                                .frame(height: 1)
-                        }
-                        .buttonStyle(.plain)
-                        .focused($focusedField, equals: .topWrapTracker)
-
                         ForEach(sections, id: \.name) { section in
                             Section(header:
                                 Text(section.name)
@@ -153,14 +143,6 @@ struct PlaylistBrowserView: View {
                                 }
                             }
                         }
-                        
-                        // Invisible Wrap-Around Anchor
-                        Button(action: {}) {
-                            Color.black.opacity(0.01)
-                                .frame(height: 1)
-                        }
-                        .buttonStyle(.plain)
-                        .focused($focusedField, equals: .bottomWrapTracker)
                     }
                     .padding(.horizontal, 60)
                     .padding(.bottom, 60)
@@ -196,12 +178,6 @@ struct PlaylistBrowserView: View {
             // Auto-refresh playlist identically to a manual refresh whenever the app launches
             if service.playlist.isEmpty {
                 await service.fetchPlaylist()
-            }
-        }
-        .onChange(of: focusedField) { _, newValue in
-            // Intercept vertical scroll vectors at the boundaries of the list to intelligently snap to Play All
-            if newValue == .bottomWrapTracker || newValue == .topWrapTracker {
-                focusedField = .playAll
             }
         }
     }
