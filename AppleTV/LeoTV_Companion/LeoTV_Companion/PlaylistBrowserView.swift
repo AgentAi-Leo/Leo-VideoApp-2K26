@@ -176,14 +176,14 @@ struct PlaylistBrowserView: View {
                                                 .frame(width: 1, height: 1)
                                                 .focused($focusedField, equals: .rightWarpGate(pair.offset))
                                                 .focusEffectDisabled()
-                                                .opacity(0.0)
+                                                .opacity(0.01)
                                                 .offset(x: 20)
                                         } else {
                                             Button("") {}
                                                 .buttonStyle(.plain)
                                                 .frame(width: 1, height: 1)
                                                 .focused($focusedField, equals: .rightWarpGate(pair.offset))
-                                                .opacity(0.0)
+                                                .opacity(0.01)
                                                 .offset(x: 20)
                                         }
                                     }
