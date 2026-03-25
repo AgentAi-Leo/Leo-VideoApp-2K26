@@ -73,15 +73,14 @@ struct PlaylistBrowserView: View {
                 .buttonStyle(HeaderButtonStyle())
                 .focused($focusedField, equals: .playAll)
                 
-                // Muted Toggle
+                // Audio Toggle
                 Button(action: { isMuted.toggle() }) {
-                    Text("MUTED")
-                        .font(.headline)
-                        .foregroundColor(isMuted ? .red : .white)
-                        .scaleEffect(focusedField == .muteToggle ? 1.1 : 1.0)
-                        .animation(.easeOut(duration: 0.2), value: focusedField)
+                    Label(isMuted ? "Audio OFF" : "Audio ON", systemImage: isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(HeaderButtonStyle(
+                    focusColor: isMuted ? .red : Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0),
+                    isPersistent: isMuted
+                ))
                 .focused($focusedField, equals: .muteToggle)
             }
             .padding(.horizontal, 60)
@@ -286,6 +285,7 @@ struct PlaylistRowButtonStyle: ButtonStyle {
 struct HeaderButtonStyle: ButtonStyle {
     @Environment(\.isFocused) var isFocused
     var focusColor: Color = Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0)
+    var isPersistent: Bool = false
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -295,8 +295,8 @@ struct HeaderButtonStyle: ButtonStyle {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isFocused ? focusColor : Color.white.opacity(0.15))
-                    .shadow(color: isFocused ? focusColor.opacity(0.4) : .clear, radius: 8, y: 4)
+                    .fill((isFocused || isPersistent) ? focusColor : Color.white.opacity(0.15))
+                    .shadow(color: (isFocused || isPersistent) ? focusColor.opacity(0.4) : .clear, radius: 8, y: 4)
             )
             .scaleEffect(isFocused ? 1.05 : 1.0)
             .animation(.easeOut(duration: 0.2), value: isFocused)
