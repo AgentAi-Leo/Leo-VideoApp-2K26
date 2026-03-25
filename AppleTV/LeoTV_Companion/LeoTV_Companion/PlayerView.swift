@@ -100,7 +100,7 @@ class PlayerManager {
 
     func loadPlaylist(_ items: [VideoItem], startAt: Int = 0) {
         playlist = items
-        guard .isEmpty == false, startAt < items.count else { return }
+        guard !items.isEmpty, startAt < items.count else { return }
 
         // Boot the manual event-driven loop
         playItem(at: startAt)
