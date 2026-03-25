@@ -169,10 +169,15 @@ ADDS vers-V
 
 ## ----
 ADDS vers-W
-- Improve UI/UX Navigation To Round Trip Seamlessly Up/Down PLAY ALL/REFRESH/AUDIO
+- Improve UI/UX Navigation To Round Trip Seamlessly Up/Down
+- Added "Return To Top" Button + Navigate Between PLAY ALL/REFRESH/AUDIO
 
 ADDS vers-X
-- More UI/UX Navigation Improvements 
+- More UI/UX Navigation Improvements - Press RIGHT In MAIN MENUAlways Navigates To PRESS ALL/REFRESH/AUDIO No Matter Where You Are In The Menu
+
+
+
+
 
 
 

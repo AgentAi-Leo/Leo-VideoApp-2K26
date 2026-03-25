@@ -172,9 +172,11 @@ struct PlaylistBrowserView: View {
                                     .overlay(alignment: .trailing) {
                                         if #available(tvOS 17.0, *) {
                                             Button("") {}
+                                                .buttonStyle(.plain)
                                                 .frame(width: 1, height: 1)
                                                 .focused($focusedField, equals: .rightWarpGate(pair.offset))
                                                 .focusEffectDisabled()
+                                                .opacity(0.0)
                                                 .offset(x: 20)
                                         } else {
                                             Button("") {}
