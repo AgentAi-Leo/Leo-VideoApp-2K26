@@ -38,8 +38,15 @@ class PlaylistService {
     // https://sheets.googleapis.com/v4/spreadsheets/{SHEET_ID}/values/Sheet1?key={API_KEY}
     //
     // For simplicity, we support a plain JSON endpoint that returns an array:
-    // [{"title": "...", "url": "...", "creator": "..."}]
-    private let playlistURL = "https://script.google.com/macros/s/AKfycbyWDAxI5m74XcsLlfmtNtwX9x01Gwf0OHVpH1xXbkEnpKqk2iHMRPs9bxwbOX2hzVQwrA/exec"
+    // Dynamically retrieve the Google API deployment URL from the highly secure Secrets.plist bundle natively compiled into the Apple TV hardware
+    private var playlistURL: String {
+        guard let filePath = Bundle.main.path(forResource: "Secrets", ofType: "plist"),
+              let plist = NSDictionary(contentsOfFile: filePath),
+              let urlString = plist["PLAYLIST_API_URL"] as? String else {
+            fatalError("CRITICAL: Secrets.plist is missing from the Xcode bundle! You must drag the 'Secrets.plist' file directly into Xcode's left sidebar to properly compile the API endpoint. Do not commit your Secrets.plist to Github.")
+        }
+        return urlString
+    }
 
     func fetchPlaylist() async {
         guard let url = URL(string: playlistURL) else {

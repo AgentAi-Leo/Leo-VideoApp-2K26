@@ -10,22 +10,9 @@
 		5DDD83D62F721A6000C1985B /* LeoTV_Companion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LeoTV_Companion.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		5D1783EA2F737B1900F0AA04 /* Exceptions for "LeoTV_Companion" folder in "LeoTV_Companion" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				"LeoTV-Companion-Info.plist",
-			);
-			target = 5DDD83D52F721A6000C1985B /* LeoTV_Companion */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5DDD83D82F721A6000C1985B /* LeoTV_Companion */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				5D1783EA2F737B1900F0AA04 /* Exceptions for "LeoTV_Companion" folder in "LeoTV_Companion" target */,
-			);
 			path = LeoTV_Companion;
 			sourceTree = "<group>";
 		};

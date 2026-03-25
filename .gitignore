@@ -2,3 +2,4 @@ AppleTV/SampleVideos/
 AppleTV/_SavedSourceFiles/*.mp4
 AppleTV/_SavedSourceFiles/*.json
 **/*token.json
+Secrets.plist
