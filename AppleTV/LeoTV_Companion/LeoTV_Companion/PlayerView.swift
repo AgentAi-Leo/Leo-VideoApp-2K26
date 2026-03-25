@@ -54,6 +54,9 @@ struct PlayerView: View {
             }
             playerManager.loadPlaylist(playlist, startAt: startAt)
         }
+        .onPlayPauseCommand {
+            playerManager.togglePlayPause()
+        }
         .onMoveCommand { direction in
             switch direction {
             case .left:
@@ -78,8 +81,7 @@ struct PlayerView: View {
 @MainActor
 @Observable
 class PlayerManager {
-    // Mark player as non-observed since AVPlayer isn't Observable-compatible
-    @ObservationIgnored private(set) var player = AVPlayer()
+    private(set) var player = AVPlayer()
     
     var currentIndex: Int = 0
     var currentTitle: String = ""
@@ -134,12 +136,15 @@ class PlayerManager {
         }
         guard let url = playlist[index].mediaURL else { return }
         
-        // JIT Memory Allocation: Construct a fresh decoder item exactly when needed
+        // JIT Memory Allocation: Construct a fresh decoder item 
         let freshItem = AVPlayerItem(url: url)
         
-        // Mathematically lock the default framework rate to prevent inherited AVKit Fast-Forward cascades
-        player.defaultRate = 1.0
-        player.replaceCurrentItem(with: freshItem)
+        // Instantiate a mathematically distinct AVPlayer to forcibly tear down the Apple TV Fast-Forward UIKit cache
+        let newPlayer = AVPlayer(playerItem: freshItem)
+        newPlayer.defaultRate = 1.0
+        newPlayer.isMuted = self.player.isMuted
+        
+        self.player = newPlayer
         
         currentIndex = index
         currentTitle = playlist[index].title
@@ -163,6 +168,15 @@ class PlayerManager {
     }
 
     // MARK: - Playback Controls
+
+    func togglePlayPause() {
+        if player.rate > 0 {
+            player.pause()
+        } else {
+            player.play()
+        }
+        flashInfo()
+    }
 
     func skipNext() {
         guard Date().timeIntervalSince(lastSkipTime) > 0.4 else { return }
