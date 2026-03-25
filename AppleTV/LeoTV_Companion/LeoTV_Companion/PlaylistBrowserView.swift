@@ -15,8 +15,10 @@ struct PlaylistBrowserView: View {
         case muteToggle
         case row(Int)
         case bottomWarpGate
+        case rightWarpGate(Int)
     }
     @FocusState private var focusedField: FocusTarget?
+    @State private var lastFocusedVideoRow: Int? = nil
     
     // Dynamic grouping helper to generate categorized sections natively mapping to the absolute AVPlayer indices
     var sections: [(name: String, items: [(offset: Int, element: VideoItem)])] {
@@ -64,6 +66,10 @@ struct PlaylistBrowserView: View {
                 .onMoveCommand { direction in
                     switch direction {
                     case .right: focusedField = .refresh
+                    case .left:
+                        if let lastRow = lastFocusedVideoRow {
+                            focusedField = .row(lastRow)
+                        }
                     case .down: focusedField = .row(0)
                     default: break
                     }
@@ -151,18 +157,36 @@ struct PlaylistBrowserView: View {
                                     .padding(.bottom, 12)
                             ) {
                                 ForEach(section.items, id: \.element.id) { pair in
-                                    Button(action: {
-                                        selectedIndex = pair.offset
-                                        onPlay(pair.offset, isMuted)
-                                    }) {
-                                        PlaylistRow(
-                                            item: pair.element,
-                                            index: pair.offset + 1,
-                                            isSelected: selectedIndex == pair.offset
-                                        )
+                                    HStack(spacing: 20) {
+                                        Button(action: {
+                                            selectedIndex = pair.offset
+                                            onPlay(pair.offset, isMuted)
+                                        }) {
+                                            PlaylistRow(
+                                                item: pair.element,
+                                                index: pair.offset + 1,
+                                                isSelected: selectedIndex == pair.offset
+                                            )
+                                        }
+                                        .buttonStyle(PlaylistRowButtonStyle())
+                                        .focused($focusedField, equals: .row(pair.offset))
+                                        
+                                        // Spatially Independent Sub-Pixel Warp Gate Sibling
+                                        if #available(tvOS 17.0, *) {
+                                            Color.clear
+                                                .frame(width: 1, height: 1)
+                                                .focusable(true)
+                                                .focused($focusedField, equals: .rightWarpGate(pair.offset))
+                                                .focusEffectDisabled()
+                                                .opacity(0.01)
+                                        } else {
+                                            Color.clear
+                                                .frame(width: 1, height: 1)
+                                                .focusable(true)
+                                                .focused($focusedField, equals: .rightWarpGate(pair.offset))
+                                                .opacity(0.01)
+                                        }
                                     }
-                                    .buttonStyle(PlaylistRowButtonStyle())
-                                    .focused($focusedField, equals: .row(pair.offset))
                                 }
                             }
                         }
@@ -221,6 +245,16 @@ struct PlaylistBrowserView: View {
             }
         }
         .onChange(of: focusedField) { _, newValue in
+            // Always map the user's explicit coordinate baseline while scrolling geometrically
+            if case let .row(index) = newValue {
+                lastFocusedVideoRow = index
+            }
+            
+            // Execute the kinematic camera teleportation instantly when striking the spatial gates
+            if case .rightWarpGate(_) = newValue {
+                focusedField = .playAll
+            }
+            
             if newValue == .bottomWarpGate {
                 // Initiate a tiny cinematic micro-delay to allow Apple TV to fully resolve the native focus geometry, completely erasing horizontal white-line artifacts before teleporting
                 Task {
