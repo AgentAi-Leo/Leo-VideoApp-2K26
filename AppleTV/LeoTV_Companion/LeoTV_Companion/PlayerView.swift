@@ -56,19 +56,6 @@ struct PlayerView: View {
             playerManager.tearDown()
             onExit(playerManager.currentIndex)
         }
-        .onMoveCommand { direction in
-            switch direction {
-            case .left:
-                playerManager.skipPrevious()
-            case .right:
-                playerManager.skipNext()
-            case .up:
-                // Restart entire playlist from beginning (Play All)
-                playerManager.skipToBeginning()
-            default:
-                break
-            }
-        }
     }
 }
 
