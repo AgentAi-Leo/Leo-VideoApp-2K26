@@ -54,6 +54,18 @@ struct PlayerView: View {
             }
             playerManager.loadPlaylist(playlist, startAt: startAt)
         }
+        .onMoveCommand { direction in
+            switch direction {
+            case .left:
+                playerManager.skipPrevious()
+            case .right:
+                playerManager.skipNext()
+            case .up:
+                playerManager.skipToBeginning()
+            default:
+                break
+            }
+        }
         .onDisappear {
             playerManager.tearDown()
             onExit(playerManager.currentIndex)
