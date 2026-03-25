@@ -169,7 +169,7 @@ ADDS vers-V
 
 ## ----
 ADDS vers-W
-- Improve UI/UX Navigation To Round Trip Seamlessly
+- Improve UI/UX Navigation To Round Trip Seamlessly Up/Down PLAY ALL/REFRESH/AUDIO
 
 ADDS vers-X
 - More UI/UX Navigation Improvements 
