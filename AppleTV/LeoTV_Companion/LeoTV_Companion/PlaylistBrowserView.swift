@@ -229,7 +229,7 @@ struct PlaylistBrowserView: View {
                             .buttonStyle(HeaderButtonStyle(focusColor: Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0), isPersistent: false))
                             .focused($focusedField, equals: .bottomWarpGate)
                             .padding(.top, 20)
-                            .opacity(focusedField == .bottomWarpGate ? 1.0 : 0.35)
+                            .opacity(focusedField == .bottomWarpGate ? 1.0 : 0.20)
                         }
                     }
                     .padding(.horizontal, 60)
