@@ -173,7 +173,10 @@ ADDS vers-W
 - Added "Return To Top" Button + Navigate Between PLAY ALL/REFRESH/AUDIO
 
 ADDS vers-X
-- More UI/UX Navigation Improvements - Press RIGHT In MAIN MENUAlways Navigates To PRESS ALL/REFRESH/AUDIO No Matter Where You Are In The Menu
+- More UI/UX Navigation Improvements - Press RIGHT In MAIN MENU Always Navigates To PLAY ALL/REFRESH/AUDIO Buttons No Matter Where You Are In The MAIN Menu
+- More UI/UX Navigation Improvements - Press LEFT In MAIN MENU Always Navigates To 1st Video Of Each Section (INTRO/MAIN/OUTRO) No Matter Where You Are In The MAIN Menu
+- WORKS REALLY GREAT!
+
 
 
 
