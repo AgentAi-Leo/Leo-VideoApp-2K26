@@ -54,10 +54,6 @@ struct PlayerView: View {
         }
         .onDisappear {
             playerManager.tearDown()
-        }
-        .onExitCommand {
-            // Menu button on Siri Remote → go back to browser
-            playerManager.tearDown()
             onExit(playerManager.currentIndex)
         }
         .onMoveCommand { direction in
