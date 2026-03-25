@@ -242,8 +242,9 @@ struct PlaylistRow: View {
 
             // Play icon
             Image(systemName: "play.circle.fill")
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white.opacity(0.65), Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0))
                 .font(.title2)
-                .foregroundColor(Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0))
         }
         .padding(.vertical, 2) // Reduced padding 75% (from 6pt) for maximum layout compactness
         .padding(.horizontal, 24)
