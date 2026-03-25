@@ -78,7 +78,7 @@ struct PlaylistBrowserView: View {
                     Label(isMuted ? "Audio OFF" : "Audio ON", systemImage: isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
                 }
                 .buttonStyle(HeaderButtonStyle(
-                    focusColor: isMuted ? .red : Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0),
+                    focusColor: isMuted ? Color(red: 145/255.0, green: 15/255.0, blue: 15/255.0) : Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0),
                     isPersistent: isMuted
                 ))
                 .focused($focusedField, equals: .muteToggle)

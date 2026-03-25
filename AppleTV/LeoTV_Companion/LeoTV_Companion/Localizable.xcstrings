@@ -17,6 +17,12 @@
     "%lld videos" : {
 
     },
+    "Audio OFF" : {
+
+    },
+    "Audio ON" : {
+
+    },
     "CFBundleName" : {
       "comment" : "Bundle name",
       "extractionState" : "manual",
@@ -36,9 +42,6 @@
 
     },
     "Loading playlist…" : {
-
-    },
-    "MUTED" : {
 
     },
     "Play All" : {
