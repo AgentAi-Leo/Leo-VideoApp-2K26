@@ -271,14 +271,14 @@ struct HeaderButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 28, weight: .bold))
-            .foregroundColor(isFocused ? .white : .black)
-            .padding(.horizontal, 24)
+            .font(.headline)
+            .foregroundColor(.white)
+            .padding(.horizontal, 20)
             .padding(.vertical, 12)
             .background(
-                Capsule()
-                    .fill(isFocused ? Color.cyan : Color.white)
-                    .shadow(color: isFocused ? Color.cyan.opacity(0.5) : .clear, radius: 10, y: 5)
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(isFocused ? Color.green : Color.white.opacity(0.15))
+                    .shadow(color: isFocused ? Color.green.opacity(0.4) : .clear, radius: 8, y: 4)
             )
             .scaleEffect(isFocused ? 1.05 : 1.0)
             .animation(.easeOut(duration: 0.2), value: isFocused)
