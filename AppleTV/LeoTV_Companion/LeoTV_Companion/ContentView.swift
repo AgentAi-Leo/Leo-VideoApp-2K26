@@ -14,7 +14,11 @@ struct ContentView: View {
                     playlist: playlistService.playlist,
                     startAt: startIndex,
                     onExit: { lastIndex in 
-                        returnFocusIndex = lastIndex
+                        if lastIndex == playlistService.playlist.count - 1 {
+                            returnFocusIndex = -1 // Magic integer triggering 'Play All' focus reset
+                        } else {
+                            returnFocusIndex = lastIndex
+                        }
                         isPlaying = false 
                     }
                 )

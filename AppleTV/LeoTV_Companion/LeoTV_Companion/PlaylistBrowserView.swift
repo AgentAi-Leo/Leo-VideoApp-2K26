@@ -143,14 +143,22 @@ struct PlaylistBrowserView: View {
             // Because ContentView explicitly destroys and recreates this view via the 'isPlaying' boolean,
             // .onChange will mathematically never fire. We MUST hijack the focus state the absolute nanosecond the view mounts!
             if let index = returnFocusIndex {
-                focusedField = .row(index)
+                if index == -1 {
+                    focusedField = .playAll
+                } else {
+                    focusedField = .row(index)
+                }
                 // Nullify it so it doesn't accidentally re-trigger if the view refreshes
                 returnFocusIndex = nil
             }
         }
         .onChange(of: returnFocusIndex) { _, newIndex in
             if let index = newIndex {
-                focusedField = .row(index)
+                if index == -1 {
+                    focusedField = .playAll
+                } else {
+                    focusedField = .row(index)
+                }
                 returnFocusIndex = nil
             }
         }
