@@ -60,19 +60,15 @@ struct PlaylistBrowserView: View {
                     }
                 }) {
                     Label("Refresh", systemImage: "arrow.clockwise")
-                        .font(.callout)
                 }
+                .buttonStyle(HeaderButtonStyle())
                 .focused($focusedField, equals: .refresh)
 
                 // Play All button (starts from index 0)
                 Button(action: { onPlay(0) }) {
                     Label("Play All", systemImage: "play.fill")
-                        .font(.callout)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.blue)
+                .buttonStyle(HeaderButtonStyle())
                 .focused($focusedField, equals: .playAll)
             }
             .padding(.horizontal, 60)
@@ -264,5 +260,27 @@ struct PlaylistRowButtonStyle: ButtonStyle {
                     .fill(isFocused ? Color.white.opacity(0.15) : Color.clear)
             )
             // Removed scaleEffect to mathematically guarantee the Play Icon stays statically aligned against the right-margin grid
+    }
+}
+
+// MARK: - Custom Header Button Style
+
+/// Custom button style for the header buttons (Refresh, Play All) to dynamically toggle between White / Cyan states
+struct HeaderButtonStyle: ButtonStyle {
+    @Environment(\.isFocused) var isFocused
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 28, weight: .bold))
+            .foregroundColor(isFocused ? .white : .black)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .background(
+                Capsule()
+                    .fill(isFocused ? Color.cyan : Color.white)
+                    .shadow(color: isFocused ? Color.cyan.opacity(0.5) : .clear, radius: 10, y: 5)
+            )
+            .scaleEffect(isFocused ? 1.05 : 1.0)
+            .animation(.easeOut(duration: 0.2), value: isFocused)
     }
 }
