@@ -73,14 +73,15 @@ struct PlaylistBrowserView: View {
                 .buttonStyle(HeaderButtonStyle())
                 .focused($focusedField, equals: .playAll)
                 
-                // Muted Checkbox
+                // Muted Toggle
                 Button(action: { isMuted.toggle() }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: isMuted ? "checkmark.square.fill" : "square")
-                        Text("MUTED")
-                    }
+                    Text("MUTED")
+                        .font(.headline)
+                        .foregroundColor(isMuted ? .red : .white)
+                        .scaleEffect(focusedField == .muteToggle ? 1.1 : 1.0)
+                        .animation(.easeOut(duration: 0.2), value: focusedField)
                 }
-                .buttonStyle(HeaderButtonStyle(focusColor: .cyan))
+                .buttonStyle(.plain)
                 .focused($focusedField, equals: .muteToggle)
             }
             .padding(.horizontal, 60)
