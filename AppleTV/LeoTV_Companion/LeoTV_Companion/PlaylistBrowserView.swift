@@ -163,6 +163,12 @@ struct PlaylistBrowserView: View {
                 await service.fetchPlaylist()
             }
         }
+        .onChange(of: service.isLoading) { _, loading in
+            // Boot sequence: When the initial API fetch concludes, officially magnetize the cursor to "Play All"
+            if !loading && !service.playlist.isEmpty && focusedField == nil {
+                focusedField = .playAll
+            }
+        }
     }
 }
 
