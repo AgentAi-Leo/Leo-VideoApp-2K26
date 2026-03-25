@@ -8,7 +8,7 @@ import Combine
 struct PlayerView: View {
     let playlist: [VideoItem]
     let startAt: Int
-    let onExit: () -> Void
+    let onExit: (Int) -> Void
 
     @State private var playerManager = PlayerManager()
 
@@ -27,11 +27,6 @@ struct PlayerView: View {
                             Text(playerManager.currentTitle)
                                 .font(.headline)
                                 .foregroundColor(.white)
-                            if let creator = playerManager.currentCreator, !creator.isEmpty {
-                                Text(creator)
-                                    .font(.subheadline)
-                                    .foregroundColor(.white.opacity(0.7))
-                            }
                             Text("\(playerManager.currentIndex + 1) of \(playlist.count)")
                                 .font(.caption)
                                 .foregroundColor(.white.opacity(0.5))
@@ -52,6 +47,9 @@ struct PlayerView: View {
             }
         }
         .onAppear {
+            playerManager.onQueueFinished = {
+                onExit(playerManager.currentIndex)
+            }
             playerManager.loadPlaylist(playlist, startAt: startAt)
         }
         .onDisappear {
@@ -60,7 +58,7 @@ struct PlayerView: View {
         .onExitCommand {
             // Menu button on Siri Remote → go back to browser
             playerManager.tearDown()
-            onExit()
+            onExit(playerManager.currentIndex)
         }
         .onPlayPauseCommand {
             playerManager.togglePlayPause()
@@ -99,6 +97,8 @@ class PlayerManager {
     @ObservationIgnored private var infoTimer: Timer?
     @ObservationIgnored private var timeObserver: Any?
 
+    @ObservationIgnored var onQueueFinished: (() -> Void)?
+
     // MARK: - Load & Start
 
     /// Load the playlist into AVQueuePlayer, optionally starting at a specific index.
@@ -115,20 +115,35 @@ class PlayerManager {
         // Replace queue contents — only add items from startAt onwards
         player.removeAllItems()
         let startItems = Array(playerItems.dropFirst(startAt))
-        for item in startItems {
-            if player.canInsert(item, after: nil) {
-                player.insert(item, after: nil)
-            }
+        
+        // MEMORY FIX: Only enqueue the very first item instead of the entire 4K playlist!
+        if let first = startItems.first, player.canInsert(first, after: nil) {
+            player.insert(first, after: nil)
         }
 
         // Track which index we're on using KVO (Swift 6 safe)
         currentItemObserver = player.observe(\.currentItem, options: [.new]) { [weak self] _, change in
             Task { @MainActor [weak self] in
-                guard let self = self, let newItem = change.newValue as? AVPlayerItem else { return }
+                guard let self = self else { return }
+                guard let newItem = change.newValue as? AVPlayerItem else {
+                    // IF NEW ITEM IS NIL, THE QUEUE IS EXHAUSTED AND PLAYBACK IS FINISHED!
+                    self.onQueueFinished?()
+                    return 
+                }
+                
                 if let idx = self.playerItems.firstIndex(of: newItem) {
                     self.currentIndex = idx
                     self.updateNowPlaying(index: idx)
                     self.flashInfo()
+                    
+                    // JIT QUEUEING: Enqueue the immediate next item exclusively
+                    let nextIdx = idx + 1
+                    if nextIdx < self.playerItems.count {
+                        let nextItem = self.playerItems[nextIdx]
+                        if self.player.canInsert(nextItem, after: nil) {
+                            self.player.insert(nextItem, after: nil)
+                        }
+                    }
                 }
             }
         }

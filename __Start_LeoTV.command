@@ -11,6 +11,9 @@ echo ""
 lsof -ti:8080 | xargs kill -9 2>/dev/null || true
 echo "🧹 Cleared Port 8080..."
 
+echo "📦 Verifying Dependencies (yt-dlp, google-api-python-client)..."
+python3 -m pip install --quiet --upgrade --break-system-packages yt-dlp google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
 # Start the python server in the background
 python3 "$DIR/leotv_server.py" &
 SERVER_PID=$!

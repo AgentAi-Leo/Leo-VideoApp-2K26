@@ -121,12 +121,23 @@ ADDS vers-L
 
  ### NOTE: MASSIVE DISCOVERY - NEW WORKAROUND STRATEGY NEEDED FOR TV COMPANION APP!
  
-### MAJOR ISSUE/FLAW: LEARNED APPLE TV COMPANION APP HAS CHALLENGES OF PLAYBACK OF URL PLAYLISTS APPRENTLY - NEED TO IMPLEMENT WORKAROUND SINCE PLAYBACK WILL NOT TECHNICALLY PERFORM AS ORIGINALLY INTENDED FOR SEAMLESS/SMOOTH/GAPLESS PLAYBACK OF URL PLAYLISTS!!! 
+### MAJOR ISSUE/FLAW: SADLY JUST LEARNED APPLE TV COMPANION APP HAS CHALLENGES OF PLAYBACKING URL PLAYLISTS APPRENTLY - NEED TO IMPLEMENT WORKAROUND SINCE PLAYBACK WILL NOT TECHNICALLY PERFORM AS ORIGINALLY INTENDED FOR SEAMLESS/SMOOTH/GAPLESS PLAYBACK OF URL PLAYLISTS!!! 
 
 ADDS vers-U 
-  - Added Google Sheets API Integration For Playlist
-  - Added Additional UI Polish & Features
   - Added Command Launcher File (Needed To Open Terminal Window To Run Server)
+  - Ensured Any Shared Logic or Styling Is Perfectly Sub-Packaged Into 100% Standalone Project Native Filesystem
+  - Working Through Python Data/File Pipeline Logic For Apple TV PLAYLIST Syncing
+  - Added Google Sheets API Integration For Playlist
+  - Additional Logic, UI Polish & Features Tweaks
+  - Added Auto-SyncREFRESH To Initial Launch Logic For Apple TV Playlist
+  - Fixed Stuck ON LOADER After Last Video
+  - Added JUMP To PLAY ALL After Refresh
+  - Added Remember Last Video Upon Exit
+  - Fixed Video FreeFrames While Progress Bar Moves
+  - Remove Source Video Path From TITLE Display 
+  
+
+
 
 
   

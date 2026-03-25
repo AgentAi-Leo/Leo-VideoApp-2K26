@@ -1,0 +1,38 @@
+{
+  "intro": [
+    {
+      "url": "https://cdn.pixabay.com/video/2024/07/27/223461_large.mp4",
+      "title": "Unknown",
+      "creator": "cdn.pixabay.com"
+    },
+    {
+      "url": "https://cdn.pixabay.com/video/2023/04/28/160767-822213540_large.mp4",
+      "title": "Unknown",
+      "creator": "cdn.pixabay.com"
+    }
+  ],
+  "main": [
+    {
+      "url": "https://youtu.be/gv1VD4b4vpA?si=v2P05b_Y5ilW2jHV",
+      "title": "FREE BLAST SHOCKWAVE SMOKE WAVE EFFECT PACK  BLACK SCREEN OVERLAY FULL HD 1080p",
+      "creator": "Visual Lifestyle"
+    },
+    {
+      "url": "https://vimeo.com/1165756208?fl=pl&fe=sh",
+      "title": "Strange Light",
+      "creator": "Jake Fried"
+    }
+  ],
+  "outro": [
+    {
+      "url": "https://www.pexels.com/download/video/3163534",
+      "title": "Unknown",
+      "creator": "pexels.com"
+    },
+    {
+      "url": "https://www.pexels.com/download/video/13862271",
+      "title": "Unknown",
+      "creator": "pexels.com"
+    }
+  ]
+}

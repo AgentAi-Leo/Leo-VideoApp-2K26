@@ -20,7 +20,30 @@ function doGet(e) {
   };
   
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    // 🔥 DYNAMIC SHEET HUNTING: Search Google Drive for the absolute newest ' Playlist' sheet!
+    var files = DriveApp.searchFiles("mimeType='application/vnd.google-apps.spreadsheet'");
+    var newestFile = null;
+    var newestTime = 0;
+    
+    while (files.hasNext()) {
+        var file = files.next();
+        var name = file.getName();
+        if (name.indexOf(" Playlist") !== -1 || name.indexOf("LeoTV") !== -1) {
+            var time = file.getDateCreated().getTime();
+            if (time > newestTime) {
+                newestTime = time;
+                newestFile = file;
+            }
+        }
+    }
+    
+    if (!newestFile) {
+        return respondWithJSON([], headers);
+    }
+    
+    // Open the dynamically discovered newest spreadsheet!
+    var ss = SpreadsheetApp.openById(newestFile.getId());
+    var sheet = ss.getActiveSheet();
     var data = sheet.getDataRange().getValues();
     
     // Safety check: is it an empty sheet?
@@ -47,13 +70,7 @@ function doGet(e) {
     if (textCol === -1) textCol = 5;         // Col F
     if (linkCol === -1) linkCol = 8;         // Col I
     
-    var payload = {
-      "intro": [],
-      "main": [],
-      "outro": []
-    };
-    
-    var rows = [];
+    var allVideos = [];
     
     // Parse data rows (skip header)
     for (var i = 1; i < data.length; i++) {
@@ -65,54 +82,68 @@ function doGet(e) {
            continue; 
         }
         
-        // Determine Playlist Name (Batch ID -> Drive Folder -> "Default")
-        var playlistName = String(row[batchIdCol] || "").trim();
-        if (!playlistName && driveCol !== -1) {
-            playlistName = String(row[driveCol] || "").trim();
-        }
-        if (!playlistName) {
-            playlistName = "Default";
+        var rawBatchId = String(row[batchIdCol] || "").trim().toUpperCase();
+        var category = "MAIN"; // default fallback
+        
+        if (rawBatchId.endsWith("- INTRO") || rawBatchId === "INTRO") {
+            category = "INTRO";
+        } else if (rawBatchId.endsWith("- MAIN") || rawBatchId === "MAIN") {
+            category = "MAIN";
+        } else if (rawBatchId.endsWith("- OUTRO") || rawBatchId === "OUTRO") {
+            category = "OUTRO";
         }
         
-        // Use Copy Link, fallback to Preview formula match if necessary
         var url = String(row[linkCol] || "");
+        var localStreamingUrl = String(row[textCol] || "");
         
-        // Build video object
+        // 🍏 Apple TV AVPlayer natively rejects Google Drive byte-ranges. 
+        // We injected a gapless Local Area Server proxy URL into the Transcription column!
+        // We will prioritize the blazing fast local server, but fallback to Drive.
+        if (localStreamingUrl && localStreamingUrl.startsWith("http")) {
+            url = localStreamingUrl;
+        } else {
+            var fileIdMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (fileIdMatch && fileIdMatch[1]) {
+                var fileId = fileIdMatch[1];
+                url = "https://drive.google.com/uc?export=download&id=" + fileId;
+            }
+        }
+        
+        var timestampMs = new Date(row[timeCol] || 0).getTime();
+        
         var video = {
-            "id": "vid_" + i,
-            "playlist": playlistName,
+            "id": Utilities.getUuid(),
             "title": String(row[titleCol] || "Untitled Video"),
             "url": url,
-            "description": String(row[textCol] || ""),
-            "timestamp": String(row[timeCol] || new Date().toISOString())
+            "creator": String(row[textCol] || ""),
+            "category": category   // CRITICAL BUG FIX: Injecting category so Swift builds headers instead of OTHER
         };
         
-        rows.push({
-            "timestamp": new Date(row[timeCol] || 0).getTime(), // Used for sorting
+        allVideos.push({
+            "timestamp": timestampMs,
+            "category": category,
             "data": video
         });
     }
     
-    // Sort oldest to newest
-    rows.sort(function(a, b) {
+    if (allVideos.length === 0) {
+        return respondWithJSON([], headers);
+    }
+    
+    // Sort all videos chronologically
+    allVideos.sort(function(a, b) {
        return a.timestamp - b.timestamp; 
     });
     
-    // Distribute into JSON structure
-    for (var j = 0; j < rows.length; j++) {
-        var v = rows[j].data;
-        var pName = v.playlist.toUpperCase();
-        
-        if (pName === "INTRO") {
-            payload.intro.push(v);
-        } else if (pName === "OUTRO") {
-            payload.outro.push(v);
-        } else {
-            payload.main.push(v);
-        }
-    }
+    // Group sequentially: INTRO -> MAIN -> OUTRO
+    var intro = allVideos.filter(function(v) { return v.category === "INTRO"; }).map(function(v) { return v.data; });
+    var main = allVideos.filter(function(v) { return v.category === "MAIN"; }).map(function(v) { return v.data; });
+    var outro = allVideos.filter(function(v) { return v.category === "OUTRO"; }).map(function(v) { return v.data; });
     
-    return respondWithJSON(payload, headers);
+    // Combine strictly in playback order
+    var flatPayload = intro.concat(main).concat(outro);
+    
+    return respondWithJSON(flatPayload, headers);
     
   } catch(error) {
     return respondWithError(error.toString(), headers);

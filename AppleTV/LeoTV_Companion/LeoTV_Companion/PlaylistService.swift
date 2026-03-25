@@ -7,12 +7,14 @@ struct VideoItem: Identifiable, Codable {
     let title: String
     let url: String
     let creator: String?
+    let category: String?
 
-    init(id: UUID = UUID(), title: String, url: String, creator: String? = nil) {
+    init(id: UUID = UUID(), title: String, url: String, creator: String? = nil, category: String? = nil) {
         self.id = id
         self.title = title
         self.url = url
         self.creator = creator
+        self.category = category
     }
 
     /// Convenience: build a valid URL from the string
@@ -37,7 +39,7 @@ class PlaylistService {
     //
     // For simplicity, we support a plain JSON endpoint that returns an array:
     // [{"title": "...", "url": "...", "creator": "..."}]
-    private let playlistURL = "YOUR_GOOGLE_SHEET_JSON_ENDPOINT_HERE"
+    private let playlistURL = "https://script.google.com/macros/s/AKfycbyWDAxI5m74XcsLlfmtNtwX9x01Gwf0OHVpH1xXbkEnpKqk2iHMRPs9bxwbOX2hzVQwrA/exec"
 
     func fetchPlaylist() async {
         guard let url = URL(string: playlistURL) else {

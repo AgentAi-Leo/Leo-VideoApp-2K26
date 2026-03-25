@@ -6,7 +6,7 @@ import shutil
 import json
 
 # Master API Scripts
-BASICS_DIR = "/Users/jb3/__JB3_ADDs/004_DOCS/__JB3_DOCs/2025_JB3/___000-Basics"
+BASICS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Google_Backend")
 UPLOAD_DRIVE_SCRIPT = os.path.join(BASICS_DIR, "Data-GoogleDrive", "scripts", "upload_to_drive.py")
 APPEND_SHEET_SCRIPT = os.path.join(BASICS_DIR, "Data-GoogleSheet", "scripts", "append_to_sheet.py")
 
@@ -34,7 +34,10 @@ def download_video(url, title):
         print("❌ Error: 'yt-dlp' is not installed. Please run: pip install yt-dlp")
         sys.exit(1)
         
-    temp_dir = "/tmp/leotv_downloads"
+    # CRITICAL: We must download to a persistent folder within the proxy server root! 
+    # The HTTP server hosts from the current repository, so AppleTV requires exact internal bounds.
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    temp_dir = os.path.join(base_dir, "AppleTV", "_SavedSourceFiles")
     os.makedirs(temp_dir, exist_ok=True)
     
     safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).rstrip()
@@ -44,9 +47,11 @@ def download_video(url, title):
     output_template = os.path.join(temp_dir, f"{safe_title}.%(ext)s")
     
     # We pipe stdout to sys.stdout so the user sees the innate yt-dlp progress bar
+    # CRITICAL FALLBACK: We MUST strictly enforce H.264 (avc1) video codecs. 
+    # YouTube has started wrapping AV1 (av01) codecs inside .mp4 containers, causing AVPlayer and Finder to instantly crash.
     cmd = [
         "yt-dlp",
-        "-f", "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+        "-f", "bestvideo[vcodec^=avc]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
         "--merge-output-format", "mp4",
         "-o", output_template,
         url
@@ -65,7 +70,19 @@ def download_video(url, title):
     print(f"✅ Download complete: Size {os.path.getsize(expected_file) / (1024*1024):.1f} MB")
     return expected_file
 
-def upload_and_log(local_file, title, playlist_tag, drive_folder, sheet_name):
+# Helper to get the Mac's localized IP address for direct Apple TV streaming
+def get_local_ip():
+    import socket
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
+def upload_and_log(local_file, title, playlist_tag, drive_folder, sheet_name, local_link="", clear_sheet=False):
     print(f"\n☁️ [UPLOADING] Pushing to Google Drive ({drive_folder})...")
     upload_cmd = [sys.executable, UPLOAD_DRIVE_SCRIPT, "--file", local_file, "--folder", drive_folder]
     
@@ -87,7 +104,8 @@ def upload_and_log(local_file, title, playlist_tag, drive_folder, sheet_name):
         print(f"✅ Upload successful!")
 
     print(f"\n📝 [LOGGING] Appending to Google Sheet ({sheet_name}) as '{playlist_tag}'...")
-    data_args = [title, "Success", "", drive_link]
+    # Injecting local_link into what was previously the empty Transcription slot!
+    data_args = [title, "Success", local_link, drive_link]
     
     sheet_cmd = [
         sys.executable, APPEND_SHEET_SCRIPT, 
@@ -96,6 +114,9 @@ def upload_and_log(local_file, title, playlist_tag, drive_folder, sheet_name):
     ] + data_args + [
         "--batch-id", playlist_tag
     ]
+    
+    if clear_sheet:
+        sheet_cmd.append("--clear")
 
     sheet_res = subprocess.run(sheet_cmd, capture_output=True, text=True)
     if sheet_res.returncode != 0:
@@ -104,14 +125,14 @@ def upload_and_log(local_file, title, playlist_tag, drive_folder, sheet_name):
 
     print("✅ Successfully appended row!")
     
-    os.remove(local_file)
-    print("🧹 Cleaned up local cache.")
+    # CRITICAL: We can NO LONGER delete the local file!
+    # If we delete it, the Apple TV Local Stream Link will 404 crash because the Mac proxy server has no file to stream!
+    # os.remove(local_file)
+    print("✅ Kept local cache alive for Apple TV Proxy Streaming!")
 
 def main():
     parser = argparse.ArgumentParser(description="Processes a video-app.html JSON export and syncs it to Apple TV storage.")
     parser.add_argument("--file", required=True, help="Path to the apple_tv_sync.json file exported from the web app.")
-    parser.add_argument("--sheet", default=DEFAULT_SHEET_NAME, help=f"Master Sheet name (Default: {DEFAULT_SHEET_NAME})")
-    parser.add_argument("--folder", default=DEFAULT_DRIVE_FOLDER, help=f"Master Drive folder (Default: {DEFAULT_DRIVE_FOLDER})")
     args = parser.parse_args()
 
     if not os.path.exists(args.file):
@@ -128,7 +149,29 @@ def main():
     total_videos = sum(len(data.get(cat, [])) for cat in categories)
     if total_videos == 0: total_videos = 1
     videos_done = 0
+    
+    # Custom Naming & Subfolder Logic
+    from datetime import datetime
+    raw_name = args.file.replace(".json", "")
+    if raw_name == "apple_tv_sync":
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        master_name = f"LeoTVMedia_{stamp}"
+    else:
+        master_name = raw_name
+        
+    master_drive_folder = master_name
+    master_sheet_name = f"{master_name} Playlist" # Reverting to unique isolated spreadsheets per user constraint!
+    
     update_progress(0, "Starting Sync Pipeline...")
+
+    unknown_tracker = {}
+    folder_name_map = {
+        "intro": "1-INTRO",
+        "main": "2-MAIN",
+        "outro": "3-OUTRO"
+    }
+
+    is_first_upload = True
 
     for cat in categories:
         videos = data.get(cat, [])
@@ -137,11 +180,41 @@ def main():
             
         print(f"\n>>> PROCESSING {cat.upper()} PLAYLIST ({len(videos)} videos) <<<")
         for i, vid in enumerate(videos):
-            title = vid.get("title") or f"{cat}_video_{i+1}"
-            url = vid.get("url")
+            title = vid.get("title", "")
+            url = vid.get("url", "")
             
             if not url:
                 continue
+                
+            if not title or title.lower() == "unknown":
+                is_unknown = True
+            else:
+                is_unknown = False
+
+            from urllib.parse import urlparse
+            try:
+                domain_parts = urlparse(url).netloc.lower().split('.')
+                if len(domain_parts) >= 2:
+                    if domain_parts[-2] in ('co', 'com', 'org', 'net') and len(domain_parts) >= 3:
+                        main_domain = domain_parts[-3]
+                    else:
+                        main_domain = domain_parts[-2]
+                else:
+                    main_domain = domain_parts[0]
+            except:
+                main_domain = "web"
+                
+            if main_domain == "youtu":
+                main_domain = "youtube"
+                
+            if is_unknown:
+                known_count = unknown_tracker.get(main_domain, 0) + 1
+                unknown_tracker[main_domain] = known_count
+                title = f"Unknown-[{main_domain}]-{known_count}"
+            else:
+                # Forcefully inject global domain badge so Apple TV Swift can parse YouTube/Vimeo gracefully!
+                if f"[{main_domain}]" not in title.lower():
+                    title = f"{title} [{main_domain.lower()}]"
                 
             base_pct = (videos_done / total_videos) * 100
             step_pct = 100 / total_videos
@@ -150,7 +223,19 @@ def main():
             local_file = download_video(url, title)
             
             update_progress(int(base_pct + (step_pct * 0.6)), f"Uploading {title} to Drive...")
-            upload_and_log(local_file, title, cat.upper(), args.folder, args.sheet)
+            
+            # Use numbered subfolders to force strict alphabetical sorting in Google Drive
+            folder_prefix = folder_name_map.get(cat, cat.upper())
+            target_drive_folder = f"{master_drive_folder}/{folder_prefix}"
+            
+            # Generate localized streaming proxy URL so Apple TV bypasses Google Drive AVPlayer hostility
+            import urllib.parse
+            filename = os.path.basename(local_file)
+            safe_filename = urllib.parse.quote(filename)
+            local_http_link = f"http://{get_local_ip()}:8080/AppleTV/_SavedSourceFiles/{safe_filename}"
+            
+            upload_and_log(local_file, title, cat.upper(), target_drive_folder, master_sheet_name, local_http_link, clear_sheet=is_first_upload)
+            is_first_upload = False
             
             videos_done += 1
             update_progress(int((videos_done / total_videos) * 100), f"Finished processing {title}")

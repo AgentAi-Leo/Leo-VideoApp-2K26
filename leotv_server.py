@@ -4,6 +4,9 @@ import json
 import subprocess
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 
+# Force execution scope to this project directory, natively overriding macOS `.command` Launcher defaults
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 PORT = 8080
 CURRENT_SYNC_PROCESS = None
 
@@ -15,6 +18,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        self.send_header('Pragma', 'no-cache')
 
     def do_OPTIONS(self):
         self.send_response(200)
@@ -23,10 +28,74 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         global CURRENT_SYNC_PROCESS
-        if self.path == '/':
+        
+        req_path = self.path.split('?')[0]
+        
+        # 🍎 CORE AVPLAYER BYPASS: Apple TV strictly demands '206 Partial Content' byte-ranges for .mp4 streaming!
+        if req_path.startswith('/AppleTV/_SavedSourceFiles/'):
+            import urllib.parse
+            import mimetypes
+            
+            # Extract absolute local path
+            file_path = urllib.parse.unquote(req_path.lstrip('/'))
+            if not os.path.exists(file_path):
+                self.send_error(404, "Video payload not found on Mac proxy")
+                return
+
+            try:
+                file_size = os.path.getsize(file_path)
+                content_type, _ = mimetypes.guess_type(file_path)
+                if not content_type:
+                    content_type = 'video/mp4'
+
+                start = 0
+                end = file_size - 1
+
+                # Parse the specific byte range the Apple TV requested
+                if 'Range' in self.headers:
+                    range_header = self.headers['Range']
+                    range_match = range_header.replace('bytes=', '').split('-')
+                    
+                    start = int(range_match[0]) if range_match[0] else 0
+                    if len(range_match) > 1 and range_match[1]:
+                        end = int(range_match[1])
+                    
+                    self.send_response(206)
+                    self.send_header('Content-Range', f'bytes {start}-{end}/{file_size}')
+                else:
+                    self.send_response(200)
+                
+                chunk_size = (end - start) + 1
+                
+                self.send_header('Content-Type', content_type)
+                self.send_header('Accept-Ranges', 'bytes')
+                self.send_header('Content-Length', str(chunk_size))
+                self.end_headers()
+                
+                # Stream tightly packed 5MB micro-chunks to prevent Python server ram crashes
+                with open(file_path, 'rb') as f:
+                    f.seek(start)
+                    bytes_to_read = chunk_size
+                    buf_size = 1024 * 1024 * 5
+                    
+                    while bytes_to_read > 0:
+                        read_len = min(bytes_to_read, buf_size)
+                        data = f.read(read_len)
+                        if not data:
+                            break
+                        self.wfile.write(data)
+                        bytes_to_read -= len(data)
+            except BrokenPipeError:
+                # Expected when Apple TV seeks timeline rapidly
+                pass
+            except Exception as e:
+                print(f"⚠️ Proxy Stream Interruption: {e}")
+            return
+            
+        if req_path == '/':
             self.path = '/video-app.html'
             return super().do_GET()
-        elif self.path == '/status':
+        elif req_path == '/status':
             is_running = CURRENT_SYNC_PROCESS is not None and CURRENT_SYNC_PROCESS.poll() is None
             
             pct = 0
@@ -58,7 +127,10 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self):
         global CURRENT_SYNC_PROCESS
-        if self.path == '/sync':
+        
+        req_path = self.path.split('?')[0]
+        
+        if req_path == '/sync':
             # Block duplicate exports
             if CURRENT_SYNC_PROCESS is not None and CURRENT_SYNC_PROCESS.poll() is None:
                 self.send_response(400)
@@ -103,7 +175,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 self._send_cors_headers()
                 self.end_headers()
                 self.wfile.write(b"Invalid JSON")
-        elif self.path == '/cancel':
+        elif req_path == '/cancel':
             if CURRENT_SYNC_PROCESS is not None and CURRENT_SYNC_PROCESS.poll() is None:
                 print("🛑 User requested export cancellation. Forcefully terminating sync processor...")
                 CURRENT_SYNC_PROCESS.terminate()
