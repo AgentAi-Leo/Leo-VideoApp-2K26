@@ -270,6 +270,8 @@ struct HeaderButtonStyle: ButtonStyle {
     @Environment(\.isFocused) var isFocused
 
     func makeBody(configuration: Configuration) -> some View {
+        let customGreen = Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0)
+        
         configuration.label
             .font(.headline)
             .foregroundColor(.white)
@@ -277,8 +279,8 @@ struct HeaderButtonStyle: ButtonStyle {
             .padding(.vertical, 12)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isFocused ? Color.green : Color.white.opacity(0.15))
-                    .shadow(color: isFocused ? Color.green.opacity(0.4) : .clear, radius: 8, y: 4)
+                    .fill(isFocused ? customGreen : Color.white.opacity(0.15))
+                    .shadow(color: isFocused ? customGreen.opacity(0.4) : .clear, radius: 8, y: 4)
             )
             .scaleEffect(isFocused ? 1.05 : 1.0)
             .animation(.easeOut(duration: 0.2), value: isFocused)
