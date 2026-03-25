@@ -213,21 +213,24 @@ struct PlaylistBrowserView: View {
                         }
                         
                         // Structural Warp Gate
-                        Button(action: {
-                            focusedField = .playAll
-                        }) {
-                            HStack {
-                                Spacer()
-                                Label("Return to Top", systemImage: "arrow.up.circle.fill")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                    .padding(.vertical, 16)
-                                Spacer()
+                        if !service.playlist.isEmpty {
+                            Button(action: {
+                                focusedField = .playAll
+                            }) {
+                                HStack {
+                                    Spacer()
+                                    Label("Return to Top", systemImage: "arrow.up.circle.fill")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                        .padding(.vertical, 16)
+                                    Spacer()
+                                }
                             }
+                            .buttonStyle(HeaderButtonStyle(focusColor: Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0), isPersistent: false))
+                            .focused($focusedField, equals: .bottomWarpGate)
+                            .padding(.top, 20)
+                            .opacity(focusedField == .bottomWarpGate ? 1.0 : 0.35)
                         }
-                        .buttonStyle(HeaderButtonStyle(focusColor: Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0), isPersistent: false))
-                        .focused($focusedField, equals: .bottomWarpGate)
-                        .padding(.top, 20)
                     }
                     .padding(.horizontal, 60)
                     .padding(.bottom, 60)
