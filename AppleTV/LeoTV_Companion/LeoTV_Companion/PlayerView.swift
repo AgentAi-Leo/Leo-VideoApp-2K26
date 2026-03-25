@@ -60,9 +60,6 @@ struct PlayerView: View {
             playerManager.tearDown()
             onExit(playerManager.currentIndex)
         }
-        .onPlayPauseCommand {
-            playerManager.togglePlayPause()
-        }
         .onMoveCommand { direction in
             switch direction {
             case .left:
@@ -152,15 +149,6 @@ class PlayerManager {
     }
 
     // MARK: - Playback Controls
-
-    func togglePlayPause() {
-        if player.rate > 0 {
-            player.pause()
-        } else {
-            player.play()
-        }
-        flashInfo()
-    }
 
     func skipNext() {
         playItem(at: currentIndex + 1)

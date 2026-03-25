@@ -162,7 +162,7 @@ I'm ready to tackle your minor UI annoyances whenever you are! Let me know what 
 
 - 
 
-ADDS vers-V (COMING NEXT)
+ADDS vers-V 
 - Fix Various Playback Logic Details And UI Issues 
 
 
