@@ -7,7 +7,6 @@ struct PlaylistBrowserView: View {
     let onPlay: (Int) -> Void    // passes the selected index
 
     @State private var selectedIndex: Int = 0
-    @State private var hasBooted = false
     
     enum FocusTarget: Hashable {
         case refresh
@@ -139,6 +138,7 @@ struct PlaylistBrowserView: View {
             }
         }
         .background(Color.black)
+        .defaultFocus($focusedField, .playAll)
         .onAppear {
             // Because ContentView explicitly destroys and recreates this view via the 'isPlaying' boolean,
             // .onChange will mathematically never fire. We MUST hijack the focus state the absolute nanosecond the view mounts!
@@ -166,17 +166,6 @@ struct PlaylistBrowserView: View {
             // Auto-refresh playlist identically to a manual refresh whenever the app launches
             if service.playlist.isEmpty {
                 await service.fetchPlaylist()
-            }
-        }
-        .onChange(of: service.isLoading) { _, loading in
-            // Boot sequence: When the initial API fetch concludes, officially magnetize the cursor to the exact geometry of the first video
-            if !loading && !service.playlist.isEmpty && !hasBooted {
-                hasBooted = true
-                
-                // Provide a microscopic 0.15s framework delay to allow SwiftUI to physically mount the scroll items
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    focusedField = .row(0)
-                }
             }
         }
     }
