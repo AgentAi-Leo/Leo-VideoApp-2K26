@@ -122,6 +122,9 @@ class PlayerManager {
     // MARK: - Track Management
 
     private func playItem(at index: Int) {
+        // Forcefully pause hardware before ejecting the track to permanently crush native Fast-Forward continuity bleeding
+        player.pause()
+
         // If we ran off the edge of the playlist array, the viewing loop is officially over
         guard index >= 0, index < playlist.count else {
             onQueueFinished?()
@@ -144,6 +147,17 @@ class PlayerManager {
         // Immediately forcefully set the physical clock velocity to 1.0 Real-Time
         player.rate = 1.0
         player.play()
+        
+        // Anti-3x tvOS swipe bleed lock: Wait exactly 150ms for the native tvOS fast-forward gesture to physically complete its internal UIKit resolving sequence, and forcefully mathematically snap the playback velocity aggressively back to exactly 1.0x Real-Time.
+        Task {
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            await MainActor.run {
+                if self.player.rate > 1.0 {
+                    self.player.defaultRate = 1.0
+                    self.player.rate = 1.0
+                }
+            }
+        }
     }
 
     /// Briefly show the now-playing info overlay (auto-hides after 4s)
