@@ -226,10 +226,9 @@ struct PlaylistBrowserView: View {
                                     Spacer()
                                 }
                             }
-                            .buttonStyle(HeaderButtonStyle(focusColor: Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0), isPersistent: false))
+                            .buttonStyle(WarpGateButtonStyle())
                             .focused($focusedField, equals: .bottomWarpGate)
                             .padding(.top, 20)
-                            .opacity(focusedField == .bottomWarpGate ? 1.0 : 0.20)
                         }
                     }
                     .padding(.horizontal, 60)
@@ -430,6 +429,30 @@ struct HeaderButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: 14)
                     .fill((isFocused || isPersistent) ? focusColor : Color.white.opacity(0.15))
                     .shadow(color: (isFocused || isPersistent) ? focusColor.opacity(0.4) : .clear, radius: 8, y: 4)
+            )
+            .scaleEffect(isFocused ? 1.05 : 1.0)
+            .animation(.easeOut(duration: 0.2), value: isFocused)
+    }
+}
+
+// MARK: - Custom Footer Button Style
+
+/// Specialized style for the bottom Warp Gate to decouple Typography alpha tracking securely from the Background boundary
+struct WarpGateButtonStyle: ButtonStyle {
+    @Environment(\.isFocused) var isFocused
+    var focusColor: Color = Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0)
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.headline)
+            .foregroundColor(.white)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .opacity(isFocused ? 1.0 : 0.32)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(isFocused ? focusColor : Color.white.opacity(0.03))
+                    .shadow(color: isFocused ? focusColor.opacity(0.4) : .clear, radius: 8, y: 4)
             )
             .scaleEffect(isFocused ? 1.05 : 1.0)
             .animation(.easeOut(duration: 0.2), value: isFocused)
