@@ -15,10 +15,8 @@ struct PlaylistBrowserView: View {
         case muteToggle
         case row(Int)
         case bottomWarpGate
-        case rightWarpGate(Int)
     }
     @FocusState private var focusedField: FocusTarget?
-    @State private var lastFocusedVideoRow: Int? = nil
     
     // Dynamic grouping helper to generate categorized sections natively mapping to the absolute AVPlayer indices
     var sections: [(name: String, items: [(offset: Int, element: VideoItem)])] {
@@ -66,10 +64,6 @@ struct PlaylistBrowserView: View {
                 .onMoveCommand { direction in
                     switch direction {
                     case .right: focusedField = .refresh
-                    case .left:
-                        if let lastRow = lastFocusedVideoRow {
-                            focusedField = .row(lastRow)
-                        }
                     case .down: focusedField = .row(0)
                     default: break
                     }
@@ -169,24 +163,6 @@ struct PlaylistBrowserView: View {
                                     }
                                     .buttonStyle(PlaylistRowButtonStyle())
                                     .focused($focusedField, equals: .row(pair.offset))
-                                    .overlay(alignment: .trailing) {
-                                        if #available(tvOS 17.0, *) {
-                                            Button("") {}
-                                                .buttonStyle(.plain)
-                                                .frame(width: 1, height: 1)
-                                                .focused($focusedField, equals: .rightWarpGate(pair.offset))
-                                                .focusEffectDisabled()
-                                                .opacity(0.01)
-                                                .offset(x: 20)
-                                        } else {
-                                            Button("") {}
-                                                .buttonStyle(.plain)
-                                                .frame(width: 1, height: 1)
-                                                .focused($focusedField, equals: .rightWarpGate(pair.offset))
-                                                .opacity(0.01)
-                                                .offset(x: 20)
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -245,10 +221,6 @@ struct PlaylistBrowserView: View {
             }
         }
         .onChange(of: focusedField) { _, newValue in
-            if case let .rightWarpGate(offset) = newValue {
-                lastFocusedVideoRow = offset
-                focusedField = .playAll
-            }
             if newValue == .bottomWarpGate {
                 // Initiate a tiny cinematic micro-delay to allow Apple TV to fully resolve the native focus geometry, completely erasing horizontal white-line artifacts before teleporting
                 Task {
