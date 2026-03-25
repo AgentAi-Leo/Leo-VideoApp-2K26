@@ -238,7 +238,7 @@ struct PlaylistRow: View {
             // Play icon
             Image(systemName: "play.circle.fill")
                 .font(.title2)
-                .foregroundColor(.blue)
+                .foregroundColor(.cyan)
         }
         .padding(.vertical, 2) // Reduced padding 75% (from 6pt) for maximum layout compactness
         .padding(.horizontal, 24)
@@ -257,7 +257,6 @@ struct PlaylistRowButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: 12)
                     .fill(isFocused ? Color.white.opacity(0.15) : Color.clear)
             )
-            .scaleEffect(isFocused ? 1.02 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: isFocused)
+            // Removed scaleEffect to mathematically guarantee the Play Icon stays statically aligned against the right-margin grid
     }
 }
