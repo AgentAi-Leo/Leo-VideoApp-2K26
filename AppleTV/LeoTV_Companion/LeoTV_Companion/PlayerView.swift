@@ -87,6 +87,7 @@ class PlayerManager {
     private var playlist: [VideoItem] = []
     
     @ObservationIgnored private var infoTimer: Timer?
+    @ObservationIgnored private var playbackObserver: NSObjectProtocol?
     @ObservationIgnored var onQueueFinished: (() -> Void)?
 
     // MARK: - Load & Start
@@ -98,9 +99,12 @@ class PlayerManager {
         // Boot the manual event-driven loop
         playItem(at: startAt)
 
-        // Hard-wire a NotificationCenter listener to catch the EXACT frame the video fully ends natively
-        NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: nil)
-        NotificationCenter.default.addObserver(
+        // Properly tear down previous explicit observer to prevent memory leaks and stacked redundant skip events
+        if let existing = playbackObserver {
+            NotificationCenter.default.removeObserver(existing)
+        }
+        
+        playbackObserver = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: nil,
             queue: .main
@@ -126,12 +130,18 @@ class PlayerManager {
         
         // JIT Memory Allocation: Construct a fresh decoder item exactly when needed
         let freshItem = AVPlayerItem(url: url)
+        
+        // Mathematically lock the default framework rate to prevent inherited AVKit Fast-Forward cascades
+        player.defaultRate = 1.0
         player.replaceCurrentItem(with: freshItem)
         
         currentIndex = index
         currentTitle = playlist[index].title
         
         flashInfo()
+        
+        // Immediately forcefully set the physical clock velocity to 1.0 Real-Time
+        player.rate = 1.0
         player.play()
     }
 
@@ -170,10 +180,13 @@ class PlayerManager {
     // MARK: - Cleanup
 
     func tearDown() {
+        if let existing = playbackObserver {
+            NotificationCenter.default.removeObserver(existing)
+            playbackObserver = nil
+        }
         player.pause()
         player.replaceCurrentItem(with: nil)
         
-        NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: nil)
         infoTimer?.invalidate()
     }
 }
