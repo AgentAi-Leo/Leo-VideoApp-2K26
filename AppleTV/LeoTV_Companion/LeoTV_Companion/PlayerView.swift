@@ -71,7 +71,7 @@ struct PlayerView: View {
                 playerManager.skipNext()
             case .up:
                 // Restart entire playlist from beginning (Play All)
-                playerManager.rebuildQueue(from: 0)
+                playerManager.skipToBeginning()
             default:
                 break
             }
@@ -84,85 +84,60 @@ struct PlayerView: View {
 @MainActor
 @Observable
 class PlayerManager {
+    // Mark player as non-observed since AVPlayer isn't Observable-compatible
+    @ObservationIgnored private(set) var player = AVPlayer()
+    
     var currentIndex: Int = 0
     var currentTitle: String = ""
-    var currentCreator: String?
-    var showingInfo: Bool = false
-
-    // Mark player as non-observed since AVQueuePlayer isn't Observable-compatible
-    @ObservationIgnored private(set) var player: AVQueuePlayer = AVQueuePlayer()
-    @ObservationIgnored private var playlist: [VideoItem] = []
-    @ObservationIgnored private var playerItems: [AVPlayerItem] = []
-    @ObservationIgnored private var currentItemObserver: NSKeyValueObservation?
+    var showingInfo: Bool = true
+    
+    private var playlist: [VideoItem] = []
+    
     @ObservationIgnored private var infoTimer: Timer?
-    @ObservationIgnored private var timeObserver: Any?
-
     @ObservationIgnored var onQueueFinished: (() -> Void)?
 
     // MARK: - Load & Start
 
-    /// Load the playlist into AVQueuePlayer, optionally starting at a specific index.
     func loadPlaylist(_ items: [VideoItem], startAt: Int = 0) {
         playlist = items
-        guard !items.isEmpty else { return }
+        guard .isEmpty == false, startAt < items.count else { return }
 
-        // Build AVPlayerItems from URLs (keep a parallel array for index mapping)
-        playerItems = items.compactMap { item -> AVPlayerItem? in
-            guard let url = item.mediaURL else { return nil }
-            return AVPlayerItem(url: url)
+        // Boot the manual event-driven loop
+        playItem(at: startAt)
+
+        // Hard-wire a NotificationCenter listener to catch the EXACT frame the video fully ends natively
+        NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: nil)
+        NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self else { return }
+            // Verify this notification belongs strictly to the video we are currently playing
+            guard let item = notification.object as? AVPlayerItem, item == self.player.currentItem else { return }
+            self.skipNext()
         }
-
-        // Replace queue contents — only add items from startAt onwards
-        player.removeAllItems()
-        let startItems = Array(playerItems.dropFirst(startAt))
-        
-        // MEMORY FIX: Only enqueue the very first item instead of the entire 4K playlist!
-        if let first = startItems.first, player.canInsert(first, after: nil) {
-            player.insert(first, after: nil)
-        }
-
-        // Track which index we're on using KVO (Swift 6 safe)
-        currentItemObserver = player.observe(\.currentItem, options: [.new]) { [weak self] _, change in
-            Task { @MainActor [weak self] in
-                guard let self = self else { return }
-                guard let newItem = change.newValue as? AVPlayerItem else {
-                    // IF NEW ITEM IS NIL, THE QUEUE IS EXHAUSTED AND PLAYBACK IS FINISHED!
-                    self.onQueueFinished?()
-                    return 
-                }
-                
-                if let idx = self.playerItems.firstIndex(of: newItem) {
-                    self.currentIndex = idx
-                    self.updateNowPlaying(index: idx)
-                    self.flashInfo()
-                    
-                    // JIT QUEUEING: Enqueue the immediate next item exclusively
-                    let nextIdx = idx + 1
-                    if nextIdx < self.playerItems.count {
-                        let nextItem = self.playerItems[nextIdx]
-                        if self.player.canInsert(nextItem, after: nil) {
-                            self.player.insert(nextItem, after: nil)
-                        }
-                    }
-                }
-            }
-        }
-
-        // Start playback
-        currentIndex = startAt
-        updateNowPlaying(index: startAt)
-        flashInfo()
-        player.play()
     }
 
     // MARK: - Track Management
 
-    /// Update the displayed title/creator
-    private func updateNowPlaying(index: Int) {
-        guard index < playlist.count else { return }
+    private func playItem(at index: Int) {
+        // If we ran off the edge of the playlist array, the viewing loop is officially over
+        guard index >= 0, index < playlist.count else {
+            onQueueFinished?()
+            return
+        }
+        guard let url = playlist[index].mediaURL else { return }
+        
+        // JIT Memory Allocation: Construct a fresh decoder item exactly when needed
+        let freshItem = AVPlayerItem(url: url)
+        player.replaceCurrentItem(with: freshItem)
+        
         currentIndex = index
         currentTitle = playlist[index].title
-        currentCreator = playlist[index].creator
+        
+        flashInfo()
+        player.play()
     }
 
     /// Briefly show the now-playing info overlay (auto-hides after 4s)
@@ -188,58 +163,31 @@ class PlayerManager {
     }
 
     func skipNext() {
-        player.advanceToNextItem()
-        flashInfo()
+        playItem(at: currentIndex + 1)
+    }
+
+    func skipToBeginning() {
+        playItem(at: 0)
     }
 
     func skipPrevious() {
-        // If more than 3s into current track, restart it; otherwise go to previous
+        // If more than 3s into current track, restart it; otherwise precisely go to previous
         let currentTime = player.currentTime().seconds
         if currentTime > 3 {
             player.seek(to: .zero)
+            flashInfo()
         } else if currentIndex > 0 {
-            // Rebuild the queue from the previous index
-            rebuildQueue(from: currentIndex - 1)
+            playItem(at: currentIndex - 1)
         }
-        flashInfo()
-    }
-
-    /// Rebuild the queue starting from a specific playlist index
-    func rebuildQueue(from index: Int) {
-        player.pause()
-        player.removeAllItems()
-
-        let items = Array(playerItems.dropFirst(index))
-        for item in items {
-            // Re-create AVPlayerItem because used items can't be re-inserted
-            if let url = (item.asset as? AVURLAsset)?.url {
-                let freshItem = AVPlayerItem(url: url)
-                // Replace in our tracking array too
-                if let oldIdx = playerItems.firstIndex(of: item) {
-                    playerItems[oldIdx] = freshItem
-                }
-                if player.canInsert(freshItem, after: nil) {
-                    player.insert(freshItem, after: nil)
-                }
-            }
-        }
-
-        currentIndex = index
-        updateNowPlaying(index: index)
-        player.play()
     }
 
     // MARK: - Cleanup
 
     func tearDown() {
         player.pause()
-        player.removeAllItems()
-        currentItemObserver?.invalidate()
-        currentItemObserver = nil
+        player.replaceCurrentItem(with: nil)
+        
+        NotificationCenter.default.removeObserver(self, name: .AVPlayerItemDidPlayToEndTime, object: nil)
         infoTimer?.invalidate()
-        if let observer = timeObserver {
-            player.removeTimeObserver(observer)
-            timeObserver = nil
-        }
     }
 }
