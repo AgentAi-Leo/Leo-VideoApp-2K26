@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-X
+# VideoApp - v1 - vers-Z
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -177,6 +177,9 @@ ADDS vers-X
 - More UI/UX Navigation Improvements - Press LEFT In MAIN MENU Always Navigates To 1st Video Of Each Section (INTRO/MAIN/OUTRO) No Matter Where You Are In The MAIN Menu
 - Reduced Opacity Of "Return To Top" Button When Not In Focus
 - WORKS REALLY GREAT!
+
+ADDS vers-Z
+- 
 
 
 
