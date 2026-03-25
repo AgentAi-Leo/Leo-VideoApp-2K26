@@ -61,6 +61,13 @@ struct PlaylistBrowserView: View {
                 }
                 .buttonStyle(HeaderButtonStyle())
                 .focused($focusedField, equals: .playAll)
+                .onMoveCommand { direction in
+                    switch direction {
+                    case .right: focusedField = .refresh
+                    case .down: focusedField = .row(0)
+                    default: break
+                    }
+                }
 
                 // Refresh button
                 Button(action: {
@@ -73,6 +80,14 @@ struct PlaylistBrowserView: View {
                 }
                 .buttonStyle(HeaderButtonStyle())
                 .focused($focusedField, equals: .refresh)
+                .onMoveCommand { direction in
+                    switch direction {
+                    case .left: focusedField = .playAll
+                    case .right: focusedField = .muteToggle
+                    case .down: focusedField = .row(0)
+                    default: break
+                    }
+                }
                 
                 // Audio Toggle
                 Button(action: { isMuted.toggle() }) {
@@ -83,6 +98,13 @@ struct PlaylistBrowserView: View {
                     isPersistent: isMuted
                 ))
                 .focused($focusedField, equals: .muteToggle)
+                .onMoveCommand { direction in
+                    switch direction {
+                    case .left: focusedField = .refresh
+                    case .down: focusedField = .row(0)
+                    default: break
+                    }
+                }
             }
             .padding(.horizontal, 60)
             .padding(.top, 40)
