@@ -1,5 +1,5 @@
 03.17.26
-# VideoApp - v1 - vers-W
+# VideoApp - v1 - vers-X
 ADDS vers-B:
   - Persistent Playlist & About Text
   - Player Cyan 
@@ -170,7 +170,10 @@ ADDS vers-V
 ## ----
 ADDS vers-W
 - Improve UI/UX Navigation To Round Trip Seamlessly
--
+
+ADDS vers-X
+- More UI/UX Navigation Improvements 
+
 
 
 
