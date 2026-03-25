@@ -107,6 +107,10 @@ struct PlaylistBrowserView: View {
                 .onMoveCommand { direction in
                     switch direction {
                     case .left: focusedField = .refresh
+                    case .right:
+                        if let lastRow = lastFocusedVideoRow {
+                            focusedField = .row(lastRow)
+                        }
                     case .down: focusedField = .row(0)
                     default: break
                     }
