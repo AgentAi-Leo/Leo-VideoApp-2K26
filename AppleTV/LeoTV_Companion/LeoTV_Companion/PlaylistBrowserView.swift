@@ -16,6 +16,7 @@ struct PlaylistBrowserView: View {
         case row(Int)
         case bottomWarpGate
         case rightWarpGate(Int)
+        case leftWarpGate(Int, String)
     }
     @FocusState private var focusedField: FocusTarget?
     @State private var lastFocusedVideoRow: Int? = nil
@@ -162,6 +163,22 @@ struct PlaylistBrowserView: View {
                             ) {
                                 ForEach(section.items, id: \.element.id) { pair in
                                     HStack(spacing: 20) {
+                                        // Spatially Independent Sub-Pixel Left-Warp (Section Jumper) Sibling
+                                        if #available(tvOS 17.0, *) {
+                                            Color.clear
+                                                .frame(width: 1, height: 1)
+                                                .focusable(true)
+                                                .focused($focusedField, equals: .leftWarpGate(pair.offset, section.name))
+                                                .focusEffectDisabled()
+                                                .opacity(0.01)
+                                        } else {
+                                            Color.clear
+                                                .frame(width: 1, height: 1)
+                                                .focusable(true)
+                                                .focused($focusedField, equals: .leftWarpGate(pair.offset, section.name))
+                                                .opacity(0.01)
+                                        }
+                                        
                                         Button(action: {
                                             selectedIndex = pair.offset
                                             onPlay(pair.offset, isMuted)
@@ -254,9 +271,33 @@ struct PlaylistBrowserView: View {
                 lastFocusedVideoRow = index
             }
             
-            // Execute the kinematic camera teleportation instantly when striking the spatial gates
+            // Execute the kinematic camera teleportation instantly when striking the spatial right gate
             if case .rightWarpGate(_) = newValue {
                 focusedField = .playAll
+            }
+            
+            // Execute the Section-Jump logic when striking the left spatial gate
+            if case let .leftWarpGate(currentOffset, sectionName) = newValue {
+                Task {
+                    // Yield the thread to allow TVOS to fully acknowledge the physical hit-test before scrambling the scroll state
+                    try? await Task.sleep(nanoseconds: 100_000_000)
+                    await MainActor.run {
+                        if let sectionIndex = sections.firstIndex(where: { $0.name == sectionName }),
+                           let firstOffset = sections[sectionIndex].items.first?.offset {
+                            
+                            if currentOffset > firstOffset {
+                                // Deep in section -> jump to head of CURRENT section
+                                focusedField = .row(firstOffset)
+                            } else if sectionIndex > 0, let prevOffset = sections[sectionIndex - 1].items.first?.offset {
+                                // Already at head -> jump to head of PREVIOUS section
+                                focusedField = .row(prevOffset)
+                            } else {
+                                // At absolute top of entire playlist -> jump entirely out to Header
+                                focusedField = .playAll
+                            }
+                        }
+                    }
+                }
             }
             
             if newValue == .bottomWarpGate {
