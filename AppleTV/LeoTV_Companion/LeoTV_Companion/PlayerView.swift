@@ -89,6 +89,8 @@ class PlayerManager {
     
     @ObservationIgnored private var infoTimer: Timer?
     @ObservationIgnored private var playbackObserver: NSObjectProtocol?
+    @ObservationIgnored private var lastSkipTime: Date = .distantPast
+    
     @ObservationIgnored var onQueueFinished: (() -> Void)?
 
     // MARK: - Load & Start
@@ -147,17 +149,6 @@ class PlayerManager {
         // Immediately forcefully set the physical clock velocity to 1.0 Real-Time
         player.rate = 1.0
         player.play()
-        
-        // Anti-3x tvOS swipe bleed lock: Wait exactly 150ms for the native tvOS fast-forward gesture to physically complete its internal UIKit resolving sequence, and forcefully mathematically snap the playback velocity aggressively back to exactly 1.0x Real-Time.
-        Task {
-            try? await Task.sleep(nanoseconds: 150_000_000)
-            await MainActor.run {
-                if self.player.rate > 1.0 {
-                    self.player.defaultRate = 1.0
-                    self.player.rate = 1.0
-                }
-            }
-        }
     }
 
     /// Briefly show the now-playing info overlay (auto-hides after 4s)
@@ -174,6 +165,8 @@ class PlayerManager {
     // MARK: - Playback Controls
 
     func skipNext() {
+        guard Date().timeIntervalSince(lastSkipTime) > 0.4 else { return }
+        lastSkipTime = Date()
         playItem(at: currentIndex + 1)
     }
 
@@ -182,6 +175,9 @@ class PlayerManager {
     }
 
     func skipPrevious() {
+        guard Date().timeIntervalSince(lastSkipTime) > 0.4 else { return }
+        lastSkipTime = Date()
+        
         // If more than 3s into current track, restart it; otherwise precisely go to previous
         let currentTime = player.currentTime().seconds
         if currentTime > 3 {
