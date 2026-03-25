@@ -14,6 +14,7 @@ struct PlaylistBrowserView: View {
         case playAll
         case muteToggle
         case row(Int)
+        case bottomWarpGate
     }
     @FocusState private var focusedField: FocusTarget?
     
@@ -143,6 +144,23 @@ struct PlaylistBrowserView: View {
                                 }
                             }
                         }
+                        
+                        // Structural Warp Gate
+                        Button(action: {
+                            focusedField = .playAll
+                        }) {
+                            HStack {
+                                Spacer()
+                                Label("Return to Top", systemImage: "arrow.up.circle.fill")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .padding(.vertical, 16)
+                                Spacer()
+                            }
+                        }
+                        .buttonStyle(HeaderButtonStyle(focusColor: Color(red: 39/255.0, green: 155/255.0, blue: 72/255.0), isPersistent: false))
+                        .focused($focusedField, equals: .bottomWarpGate)
+                        .padding(.top, 20)
                     }
                     .padding(.horizontal, 60)
                     .padding(.bottom, 60)
@@ -178,6 +196,17 @@ struct PlaylistBrowserView: View {
             // Auto-refresh playlist identically to a manual refresh whenever the app launches
             if service.playlist.isEmpty {
                 await service.fetchPlaylist()
+            }
+        }
+        .onChange(of: focusedField) { _, newValue in
+            if newValue == .bottomWarpGate {
+                // Initiate a tiny cinematic micro-delay to allow Apple TV to fully resolve the native focus geometry, completely erasing horizontal white-line artifacts before teleporting
+                Task {
+                    try? await Task.sleep(nanoseconds: 150_000_000)
+                    await MainActor.run {
+                        focusedField = .playAll
+                    }
+                }
             }
         }
     }
