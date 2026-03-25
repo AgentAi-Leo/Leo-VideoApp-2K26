@@ -135,7 +135,9 @@ ADDS vers-U
   - Added Remember Last Video Upon Exit
   - Fixed Video FreeFrames While Progress Bar Moves
   - Remove Source Video Path From TITLE Display
-  --- 
+  = Added New Pro-Tier Pipeline Using Secrets.plist Keep Deployment URL Secure
+  - Added Secrets.plist Firewall Rule to .gitignore, Mathematically Preventing That File From Ever Being Uploaded To The Internet
+  - Completely Wiped API URL from PlaylistService.swift. The Swift Code Now Dynamically Scans Inside The Apple TV Hardware At Boot To Securely Extract The URL Directly Out Of That Secrets.plist File
 
 
 
