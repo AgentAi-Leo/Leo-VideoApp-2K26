@@ -14,6 +14,7 @@ struct PlaylistBrowserView: View {
         case playAll
         case muteToggle
         case row(Int)
+        case bottomWrapTracker
     }
     @FocusState private var focusedField: FocusTarget?
     
@@ -143,6 +144,14 @@ struct PlaylistBrowserView: View {
                                 }
                             }
                         }
+                        
+                        // Invisible Wrap-Around Anchor
+                        Button(action: {}) {
+                            Color.black.opacity(0.01)
+                                .frame(height: 1)
+                        }
+                        .buttonStyle(.plain)
+                        .focused($focusedField, equals: .bottomWrapTracker)
                     }
                     .padding(.horizontal, 60)
                     .padding(.bottom, 60)
@@ -178,6 +187,12 @@ struct PlaylistBrowserView: View {
             // Auto-refresh playlist identically to a manual refresh whenever the app launches
             if service.playlist.isEmpty {
                 await service.fetchPlaylist()
+            }
+        }
+        .onChange(of: focusedField) { _, newValue in
+            // Intercept downwards scroll vector from final video and loop to top
+            if newValue == .bottomWrapTracker {
+                focusedField = .playAll
             }
         }
     }
